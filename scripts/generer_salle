@@ -1,0 +1,141 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+# --- Moteur de Génération de Salle (avec logique Boss) ---
+
+# --- PARAMÈTRES DU JEU ---
+MAX_SALLES_AVANT_BOSS=5
+
+echo "Vous tournez la poignée..."
+pause
+
+# 1. Définir les chemins
+SALLE_DIR="$(dirname "$0")/../DONJON/salles" # Raccourci vers le dossier des salles
+
+# On compte le nombre de salles déjà créées sur cet étage
+# On cherche tout ce qui commence par 'entree' OU 'salle_'
+NB_SALLES=$(ls -d "$SALLE_DIR"/* 2>/dev/null | grep -E -c "(entree|salle_[0-9]+)")
+
+# ----------------------------------------------------
+# 2. LOGIQUE DE FIN D'ÉTAGE (BOSS FINAL)
+# ----------------------------------------------------
+
+# Si on a créé assez de salles (NB_SALLES > 5), on crée le Boss
+if [ "$NB_SALLES" -gt "$MAX_SALLES_AVANT_BOSS" ]; then
+    
+    # --- Création du Boss ---
+    echo "Vous avez atteint le fond du Donjon... Un souffle glacial vous traverse."
+	pause
+    NOUVELLE_SALLE="salle_boss"
+    CHEMIN_NOUVELLE_SALLE="$SALLE_DIR/$NOUVELLE_SALLE"
+
+    if mkdir "$CHEMIN_NOUVELLE_SALLE"; then
+        echo "La salle finale s'ouvre : $NOUVELLE_SALLE"
+    else
+        echo "La salle du Boss existe déjà. Entrez avec : cd ../$NOUVELLE_SALLE"
+        exit 0
+    fi
+    
+    # Fichier du Boss : PV/PV_Max (prépare l'amélioration des stats)
+    echo "30/30" > "$CHEMIN_NOUVELLE_SALLE/BOSS_FINAL"
+    
+    # Message d'accueil du Boss
+    cat << EOF > "$CHEMIN_NOUVELLE_SALLE/message.txt"
+*** BIENVENUE DANS LA SALLE DU BOSS FINAL ***
+
+Le BOSS_FINAL se dresse devant vous.
+Il est temps de montrer votre courage !
+EOF
+    
+    # Porte de FIN (elle n'appelle plus la génération)
+    cat << EOF > "$CHEMIN_NOUVELLE_SALLE/porte_suivante"
+#!/bin/bash
+# --- Script de Porte du Boss Vaincu ---
+SALLE_ACTUELLE=\$(dirname "\$0")
+NB_ENNEMIS=\$(ls -A "\$SALLE_ACTUELLE" | grep -E -c "(rat|gobelin|squelette|BOSS_FINAL)")
+
+if [ "\$NB_ENNEMIS" -gt 0 ]; then
+    echo "Le BOSS FINAL vous empêche de fuir ou de continuer."
+    exit 1
+fi
+
+echo "Vous avez VAINCU le BOSS FINAL !"
+echo "--------------------------------------------------------"
+echo "           VICTOIRE ! BASH QUEST EST TERMINÉ !"
+echo "--------------------------------------------------------"
+echo "Un escalier s'ouvre. Vous sortez du donjon. Vous êtes libre."
+# Sortie du jeu (on quitte le dossier de jeu pour revenir à la racine du projet)
+cd ../../../../..
+exit 0
+EOF
+    
+    # Rendre la porte exécutable
+    chmod +x "$CHEMIN_NOUVELLE_SALLE/porte_suivante"
+
+# ----------------------------------------------------
+# 3. LOGIQUE DE SALLE NORMALE (ALÉATOIRE)
+# ----------------------------------------------------
+else
+    # --- Création de la Salle Normale ---
+    NOUVELLE_SALLE="salle_$((NB_SALLES + 1))"
+    CHEMIN_NOUVELLE_SALLE="$SALLE_DIR/$NOUVELLE_SALLE"
+
+    if mkdir "$CHEMIN_NOUVELLE_SALLE"; then
+        echo "La porte s'ouvre sur une nouvelle salle : $NOUVELLE_SALLE"
+		pause
+    else
+        echo "La porte semble déjà ouverte... Entrez avec : cd ../$NOUVELLE_SALLE"
+        exit 0
+    fi
+    
+    # --- Génération Aléatoire ---
+    echo "La salle se matérialise devant vous..."
+    pause
+    # Ennemi garanti : Squelette
+    echo "Un Squelette se dresse devant vous !"
+    echo "10/10" > "$CHEMIN_NOUVELLE_SALLE/squelette"
+	pause
+
+    # Ennemi supplémentaire ? (1 chance sur 2)
+    if [ $(($RANDOM % 2)) -eq 0 ]; then
+        echo "Il est accompagné d'un gobelin !"
+        echo "12/12" > "$CHEMIN_NOUVELLE_SALLE/gobelin"
+    fi
+
+    # Coffre (piégé ou non)
+    if [ $(($RANDOM % 3)) -eq 0 ]; then
+        if [ $(($RANDOM % 2)) -eq 0 ]; then
+            echo "Vous apercevez un coffre piégé (Utilisez 'cat' pour l'ouvrir)."
+            echo "piège_flechette" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+        else
+            echo "Vous apercevez un coffre rempli de trésors (Utilisez 'cat' pour l'ouvrir)."
+            echo "potion_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+        fi
+    fi
+    
+    # --- Création de la porte suivante ---
+    # On écrit le script de porte VERROUILLÉE dans la NOUVELLE salle
+    cat << EOF > "$CHEMIN_NOUVELLE_SALLE/porte_suivante"
+#!/bin/bash
+# --- Script de Porte Verrouillée ---
+SALLE_ACTUELLE=\$(dirname "\$0")
+
+# On compte les ennemis (liste complète incluant le Boss pour la future boucle)
+NB_ENNEMIS=\$(ls -A "\$SALLE_ACTUELLE" | grep -E -c "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)")
+
+if [ "\$NB_ENNEMIS" -gt 0 ]; then
+    echo "La porte est verrouillée. Il reste \$NB_ENNEMIS ennemi(s) :"
+    ls -A "\$SALLE_ACTUELLE" | grep -E "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)"
+    exit 1
+fi
+
+echo "Vous avez nettoyé la salle. La porte se déverrouille..."
+# On appelle le moteur de génération
+exec "\$(dirname "\$0")/../../../scripts/generer_salle"
+EOF
+
+    # On la rend exécutable
+    chmod +x "$CHEMIN_NOUVELLE_SALLE/porte_suivante"
+fi
+
+# 4. Instruction finale
+echo "Pour entrer dans la nouvelle salle, tapez : cd ../$NOUVELLE_SALLE"

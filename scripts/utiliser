@@ -1,0 +1,102 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande UTILISER ---
+# Utilise un objet de l'inventaire du joueur
+
+OBJET=$1
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+INVENTAIRE="$STATS_DIR/inventaire.txt"
+ETAT_COMBAT_FILE="$STATS_DIR/etat_combat"
+
+# --- 1. Vérifications de base ---
+
+if [ -z "$OBJET" ]; then
+  echo "Quel objet de l'inventaire voulez-vous utiliser ? (ex: utiliser potion_soin)"
+  exit 1
+fi
+
+# Vérifie si l'objet est dans l'inventaire
+if ! grep -q "^$OBJET$" "$INVENTAIRE"; then
+  echo "Vous n'avez pas de '$OBJET' dans votre inventaire."
+  exit 1
+fi
+
+# --- 2. Logique d'utilisation (Soin) ---
+
+case $OBJET in
+    "potion_soin")
+        # Récupération des PV du joueur depuis PV_STATS
+        HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+        HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+        
+        # Rend 5 à 8 PV
+        SOIN=$((5 + $RANDOM % 4))
+        
+        HP_APRES=$(($HP_CURRENT + $SOIN))
+        
+        # Limite le soin au PV Max
+        if [ "$HP_APRES" -gt "$HP_MAX" ]; then
+            HP_APRES="$HP_MAX"
+        fi
+
+        echo "Vous buvez la Potion de Soin et récupérez $SOIN PV."
+        pause
+        echo "Vos PV sont maintenant : $HP_APRES / $HP_MAX."
+        
+        # Sauvegarde des PV au format Actuel/Max
+        echo "$HP_APRES/$HP_MAX" > "$STATS_DIR/PV_STATS"
+        
+        ;;
+        
+    *)
+        echo "L'objet '$OBJET' ne peut pas être utilisé de cette manière."
+        exit 1
+        ;;
+esac
+
+# --- 3. Retrait de l'objet de l'inventaire ---
+# Retire la première occurrence de l'objet
+sed -i.bak "0,/^$OBJET$/d" "$INVENTAIRE"
+rm "$INVENTAIRE.bak" 2>/dev/null 
+echo "L'objet $OBJET a été retiré de l'inventaire."
+pause
+
+# ----------------------------------------------------
+# --- 4. Riposte de l'Ennemi (Correction PV_STATS) ---
+# ----------------------------------------------------
+
+# Vérifie si un combat est en cours
+if [ -f "$ETAT_COMBAT_FILE" ]; then
+    CIBLE=$(cat "$ETAT_COMBAT_FILE")
+
+    echo "L'ennemi profite de votre moment d'inattention pour riposter !"
+    pause
+
+    # Pour l'instant, on code en dur l'attaque du rat
+    DMG_ENNEMI=$((2 + $RANDOM % 2))
+
+    # On lit les PV du joueur APRÈS le soin
+    PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+    PLAYER_HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+    PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+
+    echo "$CIBLE vous frappe et inflige $DMG_ENNEMI points de dégâts !"
+    pause
+    
+    # Sauvegarde des PV au format Actuel/Max
+    echo "$PLAYER_HP_CURRENT_APRES/$PLAYER_HP_MAX" > "$STATS_DIR/PV_STATS"
+
+    # --- Vérification de mort après riposte ---
+    if [ "$PLAYER_HP_CURRENT_APRES" -le 0 ]; then
+        echo "Le coup de grâce vous est fatal. Game Over."
+        pause
+        echo "---------------------"
+        echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
+        exit 1
+    fi
+    
+    # Affichage du statut après la riposte
+    echo "Vos PV: $PLAYER_HP_CURRENT_APRES / $PLAYER_HP_MAX"
+    echo "-------------------"
+fi

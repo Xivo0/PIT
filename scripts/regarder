@@ -1,0 +1,51 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande REGARDER ---
+# Inspecte une cible (ennemi ou objet) dans la salle actuelle
+
+CIBLE=$1
+
+# --- 1. Vérifications de base ---
+
+if [ -z "$CIBLE" ]; then
+  echo "Que voulez-vous regarder ? (ex: regarder <cible>)"
+  exit 1
+fi
+
+if [ ! -e "$CIBLE" ]; then
+  echo "Il n'y a pas de '$CIBLE' ici."
+  exit 1
+fi
+
+# --- 2. Lecture et Affichage ---
+
+echo "--- $CIBLE ---"
+
+# On utilise 'cut' pour lire les PV au format X/Y (si le fichier contient '/')
+PV_ACTUEL=$(cat "$CIBLE" | cut -d'/' -f1)
+PV_MAX=$(cat "$CIBLE" | cut -d'/' -f2)
+LIGNES=$(wc -l < "$CIBLE") 
+
+# Test si le fichier est un ennemi (contient un '/' ou est le rat de départ)
+if grep -q "/" "$CIBLE" || [ "$CIBLE" == "rat_chetif" ]; then
+  
+    # Si le PV MAX est défini (i.e., ce n'est pas juste un nombre simple)
+    if [ ! -z "$PV_MAX" ]; then
+        echo "PV: $PV_ACTUEL / $PV_MAX"
+    else
+        # Cas où le fichier contenait juste le chiffre (si on n'a pas réinstallé)
+        echo "PV: $PV_ACTUEL"
+    fi
+
+    # Si le fichier a plus d'une ligne, on affiche le reste (la description)
+    if [ "$LIGNES" -gt 1 ]; then
+        echo "Description :"
+        tail -n +2 "$CIBLE"
+    fi
+    
+else
+    # Si c'est un coffre (ou un autre fichier qui ne contient pas de PV)
+    echo "Contenu : $(cat "$CIBLE")"
+    echo "Ceci est un conteneur ou un message. Utilisez 'cat' ou 'ouvrir' pour interagir."
+fi

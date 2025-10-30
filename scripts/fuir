@@ -1,0 +1,75 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande FUIR ---
+# Tente de fuir un combat.
+
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+ETAT_COMBAT_FILE="$STATS_DIR/etat_combat"
+
+# --- 1. Vérification : Sommes-nous en combat ? ---
+if [ ! -f "$ETAT_COMBAT_FILE" ]; then
+    echo "Vous n'êtes pas en combat. Utilisez 'cd ..' pour changer de salle."
+    exit 1
+fi
+
+ENNEMI=$(cat "$ETAT_COMBAT_FILE")
+CHANCE_FUITE=50 # 50% de chance de fuir
+
+echo "Vous tentez de fuir le $ENNEMI..."
+pause
+
+# --- 2. Tentative de Fuite ---
+
+if [ $(($RANDOM % 100)) -lt $CHANCE_FUITE ]; then
+    
+    # --- SUCCÈS DE LA FUITE ---
+    echo "Vous réussissez à prendre vos distances !"
+    pause
+    echo "(Le combat est terminé. Vous pouvez partir avec 'cd ..')"
+    
+    rm "$ETAT_COMBAT_FILE"
+    
+    # --- RESET DES PV DE L'ENNEMI (Format X/X) ---
+    echo "$ENNEMI, frustré, reprend son souffle. Ses PV sont restaurés."
+    pause
+    
+    # On récupère les PV max de l'ennemi (le 'Y' de 'X/Y')
+    ENNEMI_HP_MAX=$(cat "$ENNEMI" | cut -d'/' -f2)
+    
+    # On réinitialise les PV au format MAX/MAX
+    echo "$ENNEMI_HP_MAX/$ENNEMI_HP_MAX" > "$ENNEMI"
+    
+else
+    
+    # --- ÉCHEC DE LA FUITE (L'ennemi riposte) ---
+    echo "Vous trébuchez ! Le $ENNEMI vous frappe avant que vous ne puissiez vous éloigner."
+    pause
+    
+    # Dégâts ennemis (base 2 + aléatoire 0 ou 1)
+    DMG_ENNEMI=$((2 + $RANDOM % 2))
+    
+    # NOUVEAU: Lecture des PV du joueur depuis PV_STATS
+    PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+    PLAYER_HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+    
+    PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+    
+    echo "Vous perdez $DMG_ENNEMI PV en tentant de fuir."
+    pause
+    
+    # NOUVEAU: Sauvegarde des PV du joueur dans PV_STATS
+    echo "$PLAYER_HP_CURRENT_APRES/$PLAYER_HP_MAX" > "$STATS_DIR/PV_STATS"
+
+    # --- Vérification de mort ---
+    if [ "$PLAYER_HP_CURRENT_APRES" -le 0 ]; then
+        echo "Le choc vous est fatal. Game Over."
+        pause
+        echo "---------------------"
+        echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
+        exit 1 
+    fi
+
+    echo "Vos PV: $PLAYER_HP_CURRENT_APRES / $PLAYER_HP_MAX"
+    echo "Vous êtes toujours en combat avec le $ENNEMI."
+fi

@@ -1,0 +1,37 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+# --- Commande INVENTAIRE ---
+# Affiche le contenu de l'inventaire du joueur
+
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+INVENTAIRE_FILE="$STATS_DIR/inventaire.txt"
+
+echo "--- INVENTAIRE ---"
+
+# 1. Vérifie si le fichier existe et n'est pas vide
+if [ ! -s "$INVENTAIRE_FILE" ]; then
+    echo "Votre inventaire est vide."
+    echo "------------------"
+    exit 0
+fi
+
+# 2. Traitement des objets : Comptage et Affichage
+# cat : lit le fichier
+# sort : trie les lignes (nécessaire pour que 'uniq' fonctionne)
+# uniq -c : compte les occurrences de chaque ligne unique
+
+cat "$INVENTAIRE_FILE" | sort | uniq -c | while read COUNT ITEM_NAME
+do
+    # Nettoyage et affichage lisible
+    
+    # 3. Conversion du nom de l'objet (ex: potion_soin -> Potion de Soin)
+    # L'outil 'tr' convertit les '_' en espaces
+    ITEM_DISPLAY=$(echo "$ITEM_NAME" | tr '_' ' ')
+    
+    # La première lettre en majuscule est plus complexe en Bash simple
+    # On affiche simplement le nom converti
+    
+    echo "[$COUNT x] $ITEM_DISPLAY"
+done
+
+echo "------------------"

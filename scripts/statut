@@ -1,0 +1,28 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande STATUT ---
+# Affiche l'état actuel du joueur
+
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+
+# Lecture des stats (utilise la fonction lire_pv pour extraire le X et le Y)
+PV_ACTUEL=$(lire_pv "$STATS_DIR/PV_STATS")
+PV_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+
+PE_ACTUEL=$(lire_pv "$STATS_DIR/PE_STATS")
+PE_MAX=$(cat "$STATS_DIR/PE_STATS" | cut -d'/' -f2)
+
+# --- Affichage ---
+
+echo "---=== STATUT DU JOUEUR ===---"
+echo
+echo "  Classe:  $(cat "$STATS_DIR/classe")"
+echo
+echo "  PV:      $PV_ACTUEL / $PV_MAX"
+echo "  PE:      $PE_ACTUEL / $PE_MAX"
+echo
+echo "  Attaque: $(cat "$STATS_DIR/attaque_base")"
+echo "  Magie:   $(cat "$STATS_DIR/magie_base")"
+echo
+echo "------------------------------"

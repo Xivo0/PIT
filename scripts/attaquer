@@ -1,0 +1,100 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande ATTAQUER ---
+# Gère un tour de combat complet avec gestion des PV X/Y
+
+CIBLE=$1
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+
+# --- 1. Vérifications (Ennemi et Joueur) ---
+
+if [ -z "$CIBLE" ]; then
+  echo "Qui voulez-vous attaquer ? (ex: attaquer <cible>)"
+  exit 1
+fi
+
+if [ ! -e "$CIBLE" ]; then
+  echo "Il n'y a pas de '$CIBLE' ici."
+  exit 1
+fi
+
+# Lit les PV ACTUELS de l'ennemi (le X de X/Y)
+ENNEMI_HP=$(lire_pv "$CIBLE")
+
+if [ "$ENNEMI_HP" -le 0 ]; then
+  echo "$CIBLE est déjà vaincu. Choisissez une autre cible."
+  exit 1
+fi
+
+# Lit les PV ACTUELS du joueur (Utilise lire_pv sur PV_STATS)
+PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+
+if [ "$PLAYER_HP_CURRENT" -le 0 ]; then
+  echo "Vous êtes mort. Vous ne pouvez pas attaquer."
+  echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
+  exit 1
+fi
+
+# CRÉATION DU VERROU DE COMBAT : Après avoir vérifié que tout le monde est en vie.
+echo "$CIBLE" > "$STATS_DIR/etat_combat"
+
+# --- 2. Tour du Joueur ---
+
+echo "--- Début du tour ---"
+pause
+
+PLAYER_ATK=$(cat "$STATS_DIR/attaque_base")
+ENNEMI_HP_MAX=$(cat "$CIBLE" | cut -d'/' -f2) # Récupère le PV Max de l'ennemi
+
+# Calcul des dégâts
+DMG_JOUEUR=$(($PLAYER_ATK + $RANDOM % 3))
+ENNEMI_HP_APRES=$(($ENNEMI_HP - $DMG_JOUEUR)) 
+
+echo "Vous attaquez $CIBLE et infligez $DMG_JOUEUR points de dégâts !"
+pause
+
+# Sauvegarde des PV de l'ennemi au format X/Max
+echo "$ENNEMI_HP_APRES/$ENNEMI_HP_MAX" > "$CIBLE"
+
+# --- 3. Vérification : L'ennemi est-il mort ? ---
+
+if [ "$ENNEMI_HP_APRES" -le 0 ]; then
+  echo "Vous avez vaincu le $CIBLE !"
+  pause
+  rm "$CIBLE"
+  rm "$STATS_DIR/etat_combat" # FIN DU COMBAT : On lève le verrou
+  echo "---------------------"
+  exit 0
+fi
+
+# --- 4. Tour de l'Ennemi (s'il est vivant) ---
+
+DMG_ENNEMI=$((2 + $RANDOM % 2))
+
+# Calcul des nouveaux PV du joueur
+PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+
+echo "$CIBLE vous frappe et inflige $DMG_ENNEMI points de dégâts !"
+pause
+
+# Sauvegarde des PV du joueur (écrit sur PV_STATS au format X/Max)
+PLAYER_HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+echo "$PLAYER_HP_CURRENT_APRES/$PLAYER_HP_MAX" > "$STATS_DIR/PV_STATS"
+
+# --- 5. Vérification : Le joueur est-il mort ? ---
+
+if [ "$PLAYER_HP_CURRENT_APRES" -le 0 ]; then
+  echo "Aïe... Vous êtes mort."
+  pause
+  echo "---------------------"
+  echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
+  exit 1 
+fi
+
+# --- 6. Fin du tour ---
+
+echo "--- Fin du tour ---"
+echo "Vos PV: $PLAYER_HP_CURRENT_APRES / $PLAYER_HP_MAX"
+echo "PV $CIBLE: $ENNEMI_HP_APRES / $ENNEMI_HP_MAX"
+echo "-------------------"

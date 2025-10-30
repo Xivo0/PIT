@@ -1,0 +1,73 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+# --- Commande OUVRIR ---
+# Interagit avec un coffre ou autre conteneur dans la salle
+
+CIBLE=$1
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+INVENTAIRE="$STATS_DIR/inventaire.txt"
+
+# --- 1. Vérifications de base et sécurité ---
+
+if [ -z "$CIBLE" ]; then
+  echo "Que voulez-vous ouvrir ? (ex: ouvrir coffre.txt)"
+  exit 1
+fi
+
+# Sécurité critique : On doit seulement ouvrir un objet qui est un fichier
+# ET dont le nom contient "coffre" (pour éviter d'ouvrir un ennemi)
+if [ ! -f "$CIBLE" ]; then
+    echo "L'objet '$CIBLE' n'existe pas ici."
+    exit 1
+fi
+
+if [[ ! "$CIBLE" =~ "coffre" ]]; then
+  echo "Vous ne pouvez pas ouvrir un $CIBLE. Essayez 'ouvrir coffre.txt'."
+  exit 1
+fi
+
+# --- 2. Lecture du Contenu ---
+# On lit le type de loot à l'intérieur du fichier cible
+CONTENU=$(cat "$CIBLE")
+
+# --- 3. Logique des Contenus (Le Rogue-like) ---
+
+case $CONTENU in
+    "potion_soin")
+        echo "Le coffre contenait une Potion de Soin !"
+        echo "potion_soin" >> "$INVENTAIRE" # Ajoute l'objet
+        ;;
+
+    "piège_flechette")
+        # --- LOGIQUE DU PIÈGE (LA FLÈCHE EMPOISONNÉE) ---
+        echo "C'est un piège ! Une fléchette empoisonnée vous pique."
+        pause
+        # Perte de PV aléatoire (entre 3 et 5)
+        DMG_PIEGE=$((3 + $RANDOM % 3)) 
+        
+        HP_CURRENT=$(cat "$STATS_DIR/hp_current")
+        HP_CURRENT=$(($HP_CURRENT - $DMG_PIEGE))
+        
+        # Sauvegarde des PV
+        echo "$HP_CURRENT" > "$STATS_DIR/hp_current"
+        
+        echo "Vous perdez $DMG_PIEGE PV. PV restants : $HP_CURRENT."
+        pause
+        # Vérification de mort (copiée/collée de attaquer)
+        if [ "$HP_CURRENT" -le 0 ]; then
+            echo "Le poison a eu raison de vous. Game Over."
+			pause
+            # Quitte la session de jeu
+            cd ../../../../..
+            exit 1
+        fi
+        ;;
+
+    *) # Si le fichier contenait autre chose (un objet non géré)
+        echo "Le coffre contenait : $CONTENU (Objet inconnu)"
+        ;;
+esac
+
+# --- 4. Nettoyage et Fin ---
+rm "$CIBLE"
+echo "Le coffre est vide et disparaît de la salle."
