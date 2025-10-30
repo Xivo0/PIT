@@ -66,6 +66,7 @@ esac
 #    Garantit que ces fichiers existent pour toutes les classes.
 touch "$stats_dir/inventaire.txt"
 touch "$stats_dir/grimoire.txt"
+touch "$stats_dir/notes.txt"
 
 # 5. Création de la première salle (l'entrée)
 echo "Préparation de la première salle..."
@@ -101,8 +102,13 @@ if [ "\$NB_ENNEMIS" -gt 0 ]; then
 fi
 
 echo "Vous avez nettoyé la salle. La porte se déverrouille..."
+
+# CRÉATION DE LA CLÉ TEMPORAIRE DANS LA SALLE ACTUELLE
+# Cette clé autorise generer_salle à s'exécuter.
+touch .__ACCES_SALLE_OK__
+
 # On appelle le moteur de génération
-exec "\$(dirname "\$0")/../../../scripts/generer_salle"
+exec "\$(dirname "\$0")/../../../scripts/generer_salle" "\$0"
 EOF
 
 # On la rend exécutable

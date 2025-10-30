@@ -7,6 +7,7 @@ STATS_DIR=$(dirname "$0")/../DONJON/stats
 INVENTAIRE_FILE="$STATS_DIR/inventaire.txt"
 
 echo "--- INVENTAIRE ---"
+pause
 
 # 1. Vérifie si le fichier existe et n'est pas vide
 if [ ! -s "$INVENTAIRE_FILE" ]; then
@@ -22,16 +23,11 @@ fi
 
 cat "$INVENTAIRE_FILE" | sort | uniq -c | while read COUNT ITEM_NAME
 do
-    # Nettoyage et affichage lisible
-    
-    # 3. Conversion du nom de l'objet (ex: potion_soin -> Potion de Soin)
-    # L'outil 'tr' convertit les '_' en espaces
-    ITEM_DISPLAY=$(echo "$ITEM_NAME" | tr '_' ' ')
     
     # La première lettre en majuscule est plus complexe en Bash simple
     # On affiche simplement le nom converti
     
-    echo "[$COUNT x] $ITEM_DISPLAY"
+    echo "[$COUNT x] $ITEM_NAME"
 done
 
 echo "------------------"

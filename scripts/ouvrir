@@ -42,27 +42,60 @@ case $CONTENU in
         # --- LOGIQUE DU PIÈGE (LA FLÈCHE EMPOISONNÉE) ---
         echo "C'est un piège ! Une fléchette empoisonnée vous pique."
         pause
-        # Perte de PV aléatoire (entre 3 et 5)
-        DMG_PIEGE=$((3 + $RANDOM % 3)) 
+        # Perte de PV aléatoire (entre 1 et 3)
+        DMG_PIEGE=$((1 + $RANDOM % 3)) 
         
-        HP_CURRENT=$(cat "$STATS_DIR/hp_current")
+        HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
         HP_CURRENT=$(($HP_CURRENT - $DMG_PIEGE))
         
         # Sauvegarde des PV
-        echo "$HP_CURRENT" > "$STATS_DIR/hp_current"
+        ecrire_pv "$STATS_DIR/PV_STATS" "$HP_CURRENT"
         
         echo "Vous perdez $DMG_PIEGE PV. PV restants : $HP_CURRENT."
         pause
         # Vérification de mort (copiée/collée de attaquer)
-        if [ "$HP_CURRENT" -le 0 ]; then
-            echo "Le poison a eu raison de vous. Game Over."
-			pause
-            # Quitte la session de jeu
-            cd ../../../../..
-            exit 1
-        fi
+        check_mort
         ;;
-
+	"indice_magie")
+        NOTE_NOM="note_mysterieuse.txt"
+        
+        echo "Le coffre contenait une vieille note recouverte de poussière."
+        pause
+        echo "Vous la laissez dans la salle pour la lire (fichier $NOTE_NOM) et son contenu est automatiquement sauvegardé dans vos notes."
+        
+        # 1. Écriture de l'indice DANS LA SALLE
+        echo "Le rituel est simple : Pour enflammer la cible, le mot clef est 'ROUGE'." > "$NOTE_NOM"
+        echo "Ce n'est qu'en cherchant 'ROUGE' que le sort apparaitra..." >> "$NOTE_NOM"
+        echo "" >> "$NOTE_NOM"
+        echo "Le temps s'égrène lentement, mais seul le feu ROUGE triomphe." >> "$NOTE_NOM"
+        echo "Sort : sort_feu" >> "$NOTE_NOM"
+        
+        # 2. Sauvegarde du contenu dans le fichier de notes global (pour le 'grep')
+        cat "$NOTE_NOM" >> "$STATS_DIR/notes.txt"
+        
+        # Le fichier coffre.txt sera supprimé plus tard dans le script.
+        ;;
+	"indice_soin")
+        # --- NOUVELLE ÉNIGME (SOIN) ---
+        NOTE_NOM="note_runique.txt"
+        echo "Le coffre contenait une rune humide gravée dans la pierre."
+        pause
+        echo "Vous la laissez dans la salle (fichier $NOTE_NOM) et son contenu est sauvegardé dans vos notes."
+        
+        # Écriture de l'indice DANS LA SALLE
+        echo "La rune est froide au toucher. Elle dit :" > "$NOTE_NOM"
+        echo "Pour apaiser la douleur, le mot clef est 'BLEU'." >> "$NOTE_NOM"
+        echo "Sort : sort_soin" >> "$NOTE_NOM"
+        
+        # Sauvegarde du contenu dans le fichier de notes global
+        cat "$NOTE_NOM" >> "$STATS_DIR/notes.txt"
+        ;;
+	"cle_secrete")
+        echo "Le coffre contenait une 'cle_secrete' en fer."
+        pause
+        echo "cle_secrete a été ajoutée à votre inventaire."
+        echo "cle_secrete" >> "$INVENTAIRE" # Ajoute la clé
+        ;;	
     *) # Si le fichier contenait autre chose (un objet non géré)
         echo "Le coffre contenait : $CONTENU (Objet inconnu)"
         ;;

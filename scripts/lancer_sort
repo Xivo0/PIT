@@ -1,0 +1,187 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande LANCER_SORT ---
+# Utilise la magie pour attaquer l'ennemi. Consomme des PE.
+
+SORT=$1
+CIBLE=$2 # Cible est optionnelle (requise seulement pour les sorts offensifs)
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+ETAT_COMBAT_FILE="$STATS_DIR/etat_combat"
+GRIMOIRE_FILE="$STATS_DIR/grimoire.txt"
+
+# --- 1. Vérifications (Joueur, Sort et Cible) ---
+
+if [ -z "$SORT" ]; then
+  echo "Syntaxe: lancer_sort <nom_du_sort> [cible]"
+  exit 1
+fi
+
+# Vérifie si le joueur est en vie
+PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+check_mort
+
+# Vérifie si le joueur connaît le sort
+if ! grep -q "^$SORT$" "$GRIMOIRE_FILE"; then
+  echo "Vous ne connaissez pas le sort '$SORT'."
+  pause
+  echo "Utilisez 'apprendre_sort <mot_clef>' après avoir trouvé un indice."
+  exit 1
+fi
+
+# --- 2. Logique Principale (par sort) ---
+
+case $SORT in
+    "sort_feu")
+        # --- LOGIQUE OFFENSIVE (sort_feu) ---
+        
+        # Vérification de la cible (requise pour ce sort)
+        if [ -z "$CIBLE" ]; then
+            echo "Syntaxe: lancer_sort sort_feu <cible>"
+            exit 1
+        fi
+        if [ ! -e "$CIBLE" ]; then
+            echo "Il n'y a pas de '$CIBLE' ici."
+            exit 1
+        fi
+        
+        # Vérification PE
+        COUT_PE=3
+        PE_CURRENT=$(lire_pv "$STATS_DIR/PE_STATS")
+        if [ "$PE_CURRENT" -lt "$COUT_PE" ]; then
+            echo "Vous manquez de magie. Coût: $COUT_PE PE. Actuel: $PE_CURRENT PE."
+            exit 1
+        fi
+
+        # CRÉATION DU VERROU DE COMBAT
+        echo "$CIBLE" > "$ETAT_COMBAT_FILE"
+        
+        echo "--- Début du tour de magie ---"
+        pause
+        
+        # Tour du Joueur (Sort)
+        PLAYER_MAGIE=$(cat "$STATS_DIR/magie_base")
+        ENNEMI_HP=$(lire_pv "$CIBLE")
+        ENNEMI_HP_MAX=$(lire_pv_max "$CIBLE")
+        DMG_SORT=$(($PLAYER_MAGIE + $RANDOM % 5))
+        ENNEMI_HP_APRES=$(($ENNEMI_HP - $DMG_SORT))
+        echo "Vous lancez $SORT sur $CIBLE et infligez $DMG_SORT points de dégâts !"
+        pause
+        
+        # Consommation de PE
+        PE_MAX=$(lire_pv_max "$STATS_DIR/PE_STATS")
+        PE_APRES=$(($PE_CURRENT - $COUT_PE))
+        echo "Votre sort a coûté $COUT_PE PE."
+        ecrire_pv "$STATS_DIR/PE_STATS" "$PE_APRES"
+        ecrire_pv "$CIBLE" "$ENNEMI_HP_APRES" # Sauvegarde PV Ennemi
+
+        # Vérification Mort Ennemi (Logique de Groupe)
+        if [ "$ENNEMI_HP_APRES" -le 0 ]; then
+          echo "Vous avez vaincu le $CIBLE !"
+          pause
+          rm "$CIBLE"
+          NB_ENNEMIS_RESTANTS=$(ls -A . | grep -E -c "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)")
+          if [ "$NB_ENNEMIS_RESTANTS" -eq 0 ]; then
+            echo "La menace est écartée. Vous êtes hors combat."
+            rm "$STATS_DIR/etat_combat"
+          else
+            echo "Mais il reste $NB_ENNEMIS_RESTANTS ennemi(s) ! Le combat continue."
+            ls -A . | grep -E "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)"
+          fi
+          echo "---------------------"
+          exit 0
+        fi
+
+        # Riposte Ennemi (avec Esquive)
+        PLAYER_HP_CURRENT_APRES=$(lire_pv "$STATS_DIR/PV_STATS") # Initialisation pour l'affichage
+        PLAYER_HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS") # Initialisation pour l'affichage
+        
+        if [ $(($RANDOM % 4)) -eq 0 ]; then
+            echo "$CIBLE riposte... mais vous esquivez son attaque de justesse !"
+            pause
+        else
+            DMG_ENNEMI=$((2 + $RANDOM % 2))
+            PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS") # Relire les PV actuels
+            PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+            echo "$CIBLE riposte et vous frappe pour $DMG_ENNEMI points de dégâts !"
+            pause
+            ecrire_pv "$STATS_DIR/PV_STATS" "$PLAYER_HP_CURRENT_APRES"
+            
+            check_mort
+        fi
+        
+        # Fin du tour (Affichage)
+        echo "--- Fin du tour ---"
+        echo "Vos PV: $(lire_pv "$STATS_DIR/PV_STATS") / $(lire_pv_max "$STATS_DIR/PV_STATS")"
+        echo "Vos PE: $PE_APRES / $PE_MAX"
+        echo "PV $CIBLE: $ENNEMI_HP_APRES / $ENNEMI_HP_MAX"
+        echo "-------------------"
+        
+        ;; # Fin de sort_feu
+
+    "sort_soin")
+        # --- LOGIQUE DÉFENSIVE (sort_soin) ---
+        
+        # Vérification PE
+        COUT_PE=5 # Le soin coûte plus cher
+        PE_CURRENT=$(lire_pv "$STATS_DIR/PE_STATS")
+        if [ "$PE_CURRENT" -lt "$COUT_PE" ]; then
+            echo "Vous manquez de magie pour ce soin. Coût: $COUT_PE PE. Actuel: $PE_CURRENT PE."
+            exit 1
+        fi
+        
+        # Consommation de PE (on le fait avant)
+        PE_MAX=$(lire_pv_max "$STATS_DIR/PE_STATS")
+        PE_APRES=$(($PE_CURRENT - $COUT_PE))
+        echo "Votre sort a coûté $COUT_PE PE."
+        ecrire_pv "$STATS_DIR/PE_STATS" "$PE_APRES"
+
+        # Calcul du Soin
+        HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
+        HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+        SOIN=$((10 + $RANDOM % 6)) # Soin puissant (10-15 PV)
+        HP_APRES=$(($HP_CURRENT + $SOIN))
+        
+        if [ "$HP_APRES" -gt "$HP_MAX" ]; then
+            HP_APRES="$HP_MAX"
+        fi
+        
+        echo "Vous canalisez une énergie apaisante. Vous récupérez $SOIN PV."
+        pause
+        echo "Vos PV sont maintenant : $HP_APRES / $HP_MAX."
+        ecrire_pv "$STATS_DIR/PV_STATS" "$HP_APRES"
+        
+        # Riposte (si on est en combat)
+        if [ -f "$ETAT_COMBAT_FILE" ]; then
+            CIBLE_ACTIVE=$(cat "$ETAT_COMBAT_FILE")
+            
+            if [ $(($RANDOM % 4)) -eq 0 ]; then
+                echo "Une riposte de $CIBLE_ACTIVE fuse... mais vous esquivez !"
+                pause
+            else
+                DMG_ENNEMI=$((2 + $RANDOM % 2))
+                PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS") # Relire après soin
+                PLAYER_HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
+                PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+                
+                echo "Une riposte de $CIBLE_ACTIVE vous frappe pour $DMG_ENNEMI points de dégâts !"
+                pause
+                ecrire_pv "$STATS_DIR/PV_STATS" "$PLAYER_HP_CURRENT_APRES"
+                
+                check_mort
+            fi
+            
+            # Affichage final (si combat)
+            echo "--- Fin du tour ---"
+            echo "Vos PV: $(lire_pv "$STATS_DIR/PV_STATS") / $PLAYER_HP_MAX"
+            echo "Vos PE: $PE_APRES / $PE_MAX"
+            echo "-------------------"
+        fi
+        
+        ;; # Fin de sort_soin
+        
+    *)
+        echo "Sort inconnu: '$SORT'."
+        exit 1
+        ;;
+esac

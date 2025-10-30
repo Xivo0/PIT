@@ -1,0 +1,30 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande GRIMOIRE ---
+# Affiche la liste des sorts connus par le Mage (ou tout joueur)
+
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+GRIMOIRE_FILE="$STATS_DIR/grimoire.txt"
+
+echo "--- GRIMOIRE (Sorts Connus) ---"
+pause
+
+# 1. Vérifie si le fichier existe et n'est pas vide
+if [ ! -s "$GRIMOIRE_FILE" ]; then
+    echo "Votre grimoire est vide. Vous ne connaissez aucun sort."
+    pause
+    echo "------------------------------"
+    exit 0
+fi
+
+# 2. Traitement des sorts : Comptage et Affichage
+# Même logique que 'inventaire' (cat | sort | uniq -c)
+cat "$GRIMOIRE_FILE" | sort | uniq -c | while read COUNT SORT_NAME
+do
+	#Affichage des sorts avec leur nombre (pour éviter d'avoir sort feu sur 2 lignes, plutôt faire 2x sort feu)
+    echo "[$COUNT x] $SORT_NAME"
+    pause # Pause entre chaque sort
+done
+
+echo "------------------------------"

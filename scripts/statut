@@ -8,10 +8,10 @@ STATS_DIR=$(dirname "$0")/../DONJON/stats
 
 # Lecture des stats (utilise la fonction lire_pv pour extraire le X et le Y)
 PV_ACTUEL=$(lire_pv "$STATS_DIR/PV_STATS")
-PV_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+PV_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
 
 PE_ACTUEL=$(lire_pv "$STATS_DIR/PE_STATS")
-PE_MAX=$(cat "$STATS_DIR/PE_STATS" | cut -d'/' -f2)
+PE_MAX=$(lire_pv_max "$STATS_DIR/PE_STATS")
 
 # --- Affichage ---
 

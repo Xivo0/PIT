@@ -27,7 +27,7 @@ fi
 case $OBJET in
     "potion_soin")
         # Récupération des PV du joueur depuis PV_STATS
-        HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
+        HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
         HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
         
         # Rend 5 à 8 PV
@@ -45,9 +45,51 @@ case $OBJET in
         echo "Vos PV sont maintenant : $HP_APRES / $HP_MAX."
         
         # Sauvegarde des PV au format Actuel/Max
-        echo "$HP_APRES/$HP_MAX" > "$STATS_DIR/PV_STATS"
+        ecrire_pv "$STATS_DIR/PV_STATS" "$HP_APRES"
         
         ;;
+		
+	# --- NOUVEAU : LOGIQUE DES TRÉSORS ---
+    "epee_magique")
+        echo "Vous sentez la puissance de l'épée magique... Votre attaque augmente !"
+        pause
+        # Lit la stat actuelle, l'augmente de 5, et la sauvegarde
+        ATK_BASE=$(cat "$STATS_DIR/attaque_base")
+        ATK_BASE=$(($ATK_BASE + 5))
+        echo "$ATK_BASE" > "$STATS_DIR/attaque_base"
+        echo "Attaque de base : $ATK_BASE"
+        ;;
+    
+    "baton_ancien")
+        echo "Le bâton ancien crépite d'énergie... Votre magie augmente !"
+        pause
+        MAG_BASE=$(cat "$STATS_DIR/magie_base")
+        MAG_BASE=$(($MAG_BASE + 5))
+        echo "$MAG_BASE" > "$STATS_DIR/magie_base"
+        echo "Magie de base : $MAG_BASE"
+        ;;
+
+    "armure_ancestrale")
+        echo "L'armure ancestrale s'ajuste à vous... Vos PV et PE maximums augmentent !"
+        pause
+        
+        # Logique PV (Manuelle, car ecrire_pv ne change pas le Max)
+        PV_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+        PV_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
+        PV_CURRENT=$(($PV_CURRENT + 5))
+        PV_MAX=$(($PV_MAX + 5))
+        echo "$PV_CURRENT/$PV_MAX" > "$STATS_DIR/PV_STATS"
+
+        # Logique PE (Manuelle)
+        PE_CURRENT=$(lire_pv "$STATS_DIR/PE_STATS")
+        PE_MAX=$(lire_pv_max "$STATS_DIR/PE_STATS")
+        PE_CURRENT=$(($PE_CURRENT + 5))
+        PE_MAX=$(($PE_MAX + 5))
+        echo "$PE_CURRENT/$PE_MAX" > "$STATS_DIR/PE_STATS"
+
+        echo "Vos stats ont été améliorées."
+        ;;	
+			
         
     *)
         echo "L'objet '$OBJET' ne peut pas être utilisé de cette manière."
@@ -70,33 +112,32 @@ pause
 if [ -f "$ETAT_COMBAT_FILE" ]; then
     CIBLE=$(cat "$ETAT_COMBAT_FILE")
 
-    echo "L'ennemi profite de votre moment d'inattention pour riposter !"
-    pause
-
-    # Pour l'instant, on code en dur l'attaque du rat
-    DMG_ENNEMI=$((2 + $RANDOM % 2))
-
-    # On lit les PV du joueur APRÈS le soin
-    PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
-    PLAYER_HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
-    PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
-
-    echo "$CIBLE vous frappe et inflige $DMG_ENNEMI points de dégâts !"
-    pause
-    
-    # Sauvegarde des PV au format Actuel/Max
-    echo "$PLAYER_HP_CURRENT_APRES/$PLAYER_HP_MAX" > "$STATS_DIR/PV_STATS"
-
-    # --- Vérification de mort après riposte ---
-    if [ "$PLAYER_HP_CURRENT_APRES" -le 0 ]; then
-        echo "Le coup de grâce vous est fatal. Game Over."
+    # NOUVEAU : Calcul de l'esquive (25% de chance)
+    if [ $(($RANDOM % 4)) -eq 0 ]; then
+        echo "L'ennemi tente de vous frapper pendant que vous buvez, mais vous esquivez !"
         pause
-        echo "---------------------"
-        echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
-        exit 1
+    else
+        # Riposte normale
+        echo "L'ennemi profite de votre moment d'inattention pour riposter !"
+        pause
+
+        DMG_ENNEMI=$((2 + $RANDOM % 2))
+
+        # Lecture des PV et calcul des dégâts
+        PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+        PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+
+        # CHANGEMENT DU MESSAGE : générique pour éviter les problèmes de genre
+        echo "Une riposte vous frappe et inflige $DMG_ENNEMI points de dégâts !"
+        pause
+
+        # Sauvegarde des PV du joueur
+        PLAYER_HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
+        ecrire_pv "$STATS_DIR/PV_STATS" "$PLAYER_HP_CURRENT_APRES"
+
+        # Vérification : Le joueur est-il mort ?
+        check_mort
     fi
-    
-    # Affichage du statut après la riposte
-    echo "Vos PV: $PLAYER_HP_CURRENT_APRES / $PLAYER_HP_MAX"
-    echo "-------------------"
+	echo "Vos PV: $PLAYER_HP_CURRENT_APRES / $PLAYER_HP_MAX"
+    echo "Combat en cours."
 fi

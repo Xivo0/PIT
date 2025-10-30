@@ -1,0 +1,57 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+check_mort # Vérifie si le joueur est en vie avant de ramasser
+
+CIBLE=$1
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+INVENTAIRE="$STATS_DIR/inventaire.txt"
+
+# --- 1. Vérifications de base ---
+if [ -z "$CIBLE" ]; then
+    echo "Que voulez-vous ramasser ? (ex: ramasser cle_secrete.item)"
+    exit 1
+fi
+
+if [ ! -f "$CIBLE" ]; then
+    echo "L'objet '$CIBLE' n'est pas ici."
+    exit 1
+fi
+
+# --- NOUVELLE CLAUSE DE SÉCURITÉ (Votre idée) ---
+# On vérifie si le nom du fichier se termine par .item OU .loot
+# '!=' signifie "n'est pas égal à"
+# '&&' signifie "ET"
+if [[ "$CIBLE" != *.item && "$CIBLE" != *.loot ]]; then
+    echo "Ceci n'est pas un objet que vous pouvez ramasser."
+    pause
+    echo "(Essayez 'attaquer' un ennemi, 'ouvrir' un coffre, ou 'lire' un message.)"
+    exit 1
+fi
+# --- Fin de la Clause de Sécurité ---
+
+# --- 2. VÉRIFICATION DU GARDIEN (Logique existante) ---
+# Si l'objet est un 'tresor.loot', on vérifie les gardiens.
+if [[ "$CIBLE" == "tresor.loot" ]]; then
+    NB_ENNEMIS_RESTANTS=$(ls -A . | grep -E -c "(gardien_du_tresor|BOSS_FINAL)")
+
+    if [ "$NB_ENNEMIS_RESTANTS" -gt 0 ]; then
+        echo "Vous ne pouvez pas ! Un gardien protège encore le trésor !"
+        pause
+        echo "Vainquez tous les ennemis de la salle d'abord."
+        exit 1
+    fi
+    echo "Vous avez vaincu le gardien. Le trésor est à vous."
+fi
+
+# --- 3. Ramassage (Si la salle est propre ou si l'objet n'est pas gardé) ---
+# On lit le contenu du fichier (ex: "epee_magique" ou "cle_secrete")
+CONTENU_OBJET=$(cat "$CIBLE")
+
+echo "Vous avez ramassé : $CONTENU_OBJET"
+pause
+
+# Ajout à l'inventaire
+echo "$CONTENU_OBJET" >> "$INVENTAIRE"
+
+# Suppression de l'objet du donjon
+rm "$CIBLE"

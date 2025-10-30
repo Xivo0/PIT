@@ -1,9 +1,22 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
+# NOUVEAU : Récupère le chemin de la porte qui a appelé ce script
+PORTE_A_SUPPRIMER=$1
+# --- VÉRIFICATION DE SÉCURITÉ (Clé d'accès) ---
+# Le script doit être appelé depuis un dossier qui contient le fichier TEMPORAIRE .__ACCES_SALLE_OK__.
+
+if [ ! -f .__ACCES_SALLE_OK__ ]; then
+    echo "ACCÈS REFUSÉ. Ce script doit être appelé par une porte déverrouillée."
+    exit 1
+fi
+
+# Supprime la clé immédiatement après la vérification (sécurité à usage unique)
+rm .__ACCES_SALLE_OK__
+
 # --- Moteur de Génération de Salle (avec logique Boss) ---
 
 # --- PARAMÈTRES DU JEU ---
-MAX_SALLES_AVANT_BOSS=5
+MAX_SALLES_AVANT_BOSS=2
 
 echo "Vous tournez la poignée..."
 pause
@@ -99,19 +112,117 @@ else
     if [ $(($RANDOM % 2)) -eq 0 ]; then
         echo "Il est accompagné d'un gobelin !"
         echo "12/12" > "$CHEMIN_NOUVELLE_SALLE/gobelin"
+		pause
     fi
 
-    # Coffre (piégé ou non)
-    if [ $(($RANDOM % 3)) -eq 0 ]; then
-        if [ $(($RANDOM % 2)) -eq 0 ]; then
-            echo "Vous apercevez un coffre piégé (Utilisez 'cat' pour l'ouvrir)."
-            echo "piège_flechette" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
-        else
-            echo "Vous apercevez un coffre rempli de trésors (Utilisez 'cat' pour l'ouvrir)."
-            echo "potion_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
-        fi
-    fi
+    # Coffre (piégé ou non, 3 chances sur 4)
+	COFFRE_APPARITION=$(($RANDOM % 4))
+    case "$COFFRE_APPARITION" in
+	
+		0|1|2)
+	
+			echo "Vous apercevez un coffre (Utilisez 'ouvrir coffre.txt' pour l'ouvrir)."
+			pause
+			
+			# Dé de 5 faces : 0-1=Potion, 2=Piège, 3=Indice Feu, 4=Indice Soin
+			LOOT_TYPE=$(($RANDOM % 5))
+		
+			case "$LOOT_TYPE" in
+				0|1)
+					echo "potion_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+					;;
+				2)	
+					echo "piège_flechette" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+					;;
+				3)
+					echo "indice_magie" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+					;;
+				4)
+					echo "indice_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+					;;
+			esac
+			;;
+		3)
+			;;
+	esac
     
+	# 1 chance sur 2 de trouver une clé au sol
+    if [ $(($RANDOM % 2)) -eq 0 ]; then
+        echo "Vous remarquez quelque chose qui brille par terre : 'cle_secrete'."
+        pause
+        # On crée le fichier .item pour que 'ramasser' sache quoi prendre
+        echo "cle_secrete" > "$CHEMIN_NOUVELLE_SALLE/cle_secrete.item"
+    fi
+	
+	# 1 chance sur 4 de générer une porte secrète
+if [ $(($RANDOM % 4)) -eq 0 ]; then
+    
+    echo "Un passage dissimulé dans le mur attire votre attention : 'porte_secrete'."
+    pause
+    
+    # On crée le script de la porte secrète
+    cat << EOF > "$CHEMIN_NOUVELLE_SALLE/porte_secrete"
+#!/bin/bash
+source "\$(dirname "\$0")/../../../scripts/fonctions.sh"
+STATS_DIR="\$(dirname "\$0")/../../../DONJON/stats"
+INVENTAIRE_FILE="\$STATS_DIR/inventaire.txt"
+CLE_REQUISE="cle_secrete"
+SALLE_SECRETE_DIR="\$(dirname "\$0")/salle_secrete_tresor"
+
+echo "Vous examinez la 'porte_secrete'..."
+pause
+
+# 1. La salle secrète existe-t-elle déjà ?
+if [ -d "\$SALLE_SECRETE_DIR" ]; then
+    echo "La porte est déjà ouverte."
+    echo "Entrez avec : cd ./salle_secrete_tresor"
+    # La porte a déjà été utilisée, mais n'a pas été supprimée ? On la supprime maintenant.
+    rm "\$0"
+    exit 0
+fi
+
+# 2. NON : La salle n'existe pas. Vérifions la clé.
+if ! grep -q "^\$CLE_REQUISE$" "\$INVENTAIRE_FILE"; then
+    echo "Elle est verrouillée. Il manque une 'cle_secrete'."
+    exit 1
+fi
+
+# 3. OUI : Le joueur a la clé ET la salle n'existe pas.
+echo "Vous insérez la \$CLE_REQUISE... La serrure grince et s'ouvre !"
+pause
+sed -i.bak "0,/^\$CLE_REQUISE\$/d" "\$INVENTAIRE_FILE"
+rm "\$INVENTAIRE_FILE.bak" 2>/dev/null
+
+# Création de la salle secrète
+mkdir "\$SALLE_SECRETE_DIR"
+echo "La porte s'ouvre sur : salle_secrete_tresor"
+echo "20/20" > "\$SALLE_SECRETE_DIR/gardien_du_tresor"
+
+LOOT_TRESOR=$((\$RANDOM % 3))
+
+case "\$LOOT_TRESOR" in
+
+0) TRESOR_ITEM="epee_magique" ;;
+
+1) TRESOR_ITEM="baton_ancien" ;;
+
+2) TRESOR_ITEM="armure_ancestrale" ;;
+
+esac
+echo "\$TRESOR_ITEM" > "\$SALLE_SECRETE_DIR/tresor.loot"
+echo "Le trésor est gardé !" > "\$SALLE_SECRETE_DIR/message.txt"
+
+echo "Entrez avec : cd ./salle_secrete_tresor"
+pause
+
+# --- AUTO-DESTRUCTION (VOTRE IDÉE) ---
+echo "La porte secrète se fond dans le mur derrière vous, disparaissant."
+rm "\$0" # Le script 'porte_secrete' se supprime lui-même.
+EOF
+
+    chmod +x "$CHEMIN_NOUVELLE_SALLE/porte_secrete"
+fi
+	
     # --- Création de la porte suivante ---
     # On écrit le script de porte VERROUILLÉE dans la NOUVELLE salle
     cat << EOF > "$CHEMIN_NOUVELLE_SALLE/porte_suivante"
@@ -119,18 +230,22 @@ else
 # --- Script de Porte Verrouillée ---
 SALLE_ACTUELLE=\$(dirname "\$0")
 
-# On compte les ennemis (liste complète incluant le Boss pour la future boucle)
-NB_ENNEMIS=\$(ls -A "\$SALLE_ACTUELLE" | grep -E -c "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)")
+# On compte les ennemis (utilisation de la liste d'ennemis déjà définie)
+NB_ENNEMIS=\$(ls -A "\$SALLE_ACTUELLE" | grep -E -c "(rat|gobelin|squelette|rat_mutant|rat_chetif)")
 
 if [ "\$NB_ENNEMIS" -gt 0 ]; then
     echo "La porte est verrouillée. Il reste \$NB_ENNEMIS ennemi(s) :"
-    ls -A "\$SALLE_ACTUELLE" | grep -E "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)"
+    ls -A "\$SALLE_ACTUELLE" | grep -E "(rat|gobelin|squelette|rat_mutant|rat_chetif)"
     exit 1
 fi
 
 echo "Vous avez nettoyé la salle. La porte se déverrouille..."
+
+# CRÉATION DE LA CLÉ TEMPORAIRE DANS LA SALLE ACTUELLE
+# Cette clé autorise generer_salle à s'exécuter.
+touch .__ACCES_SALLE_OK__
 # On appelle le moteur de génération
-exec "\$(dirname "\$0")/../../../scripts/generer_salle"
+exec "\$(dirname "\$0")/../../../scripts/generer_salle" "\$0"
 EOF
 
     # On la rend exécutable
@@ -138,4 +253,7 @@ EOF
 fi
 
 # 4. Instruction finale
+if [ -f "$PORTE_A_SUPPRIMER" ]; then
+    rm "$PORTE_A_SUPPRIMER"
+fi
 echo "Pour entrer dans la nouvelle salle, tapez : cd ../$NOUVELLE_SALLE"

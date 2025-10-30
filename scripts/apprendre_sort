@@ -1,0 +1,54 @@
+#!/bin/bash
+source "$(dirname "$0")/fonctions.sh"
+
+# --- Commande APPRENDRE_SORT ---
+# Permet au joueur d'apprendre un sort en utilisant le mot-clé secret.
+
+MOT_CLE=$1
+STATS_DIR=$(dirname "$0")/../DONJON/stats
+GRIMOIRE_FILE="$STATS_DIR/grimoire.txt"
+NOTES_FILE="$STATS_DIR/notes.txt"
+
+# --- VÉRIFICATIONS ---
+if [ -z "$MOT_CLE" ]; then
+    echo "Syntaxe: apprendre_sort <MOT_CLEF_DECOUVERT>"
+    # ... (exit)
+fi
+
+# 1. VÉRIFICATION ANTI-TRICHE (Mise à jour pour les deux indices)
+if ! grep -E -q "(ROUGE|BLEU)" "$NOTES_FILE"; then
+    echo "Vous ne possédez aucun indice magique pour ce rituel."
+    pause
+    echo "Cherchez des indices dans les coffres !"
+    exit 1
+fi
+
+# 2. Vérification du Mot-Clé (Logique 'case' pour plusieurs sorts)
+case $MOT_CLE in
+    "ROUGE")
+        SORT_A_APPRENDRE="sort_feu"
+        ;;
+    "BLEU")
+        SORT_A_APPRENDRE="sort_soin"
+        ;;
+    *)
+        echo "Ce mot-clé est incorrect. Le rituel ne fonctionne pas."
+        pause
+        echo "Avez-vous trouvé le bon indice ? (Vérifiez vos notes)"
+        exit 1
+        ;;
+esac
+
+# Vérifie si le joueur connaît déjà ce sort
+if grep -q "^$SORT_A_APPRENDRE$" "$GRIMOIRE_FILE"; then
+    echo "Vous connaissez déjà ce sort."
+    exit 0
+fi
+
+echo "Le rituel est un succès ! Le sort $SORT_A_APPRENDRE apparaît dans votre grimoire."
+pause
+
+# AJOUT CRITIQUE : Ajoute le sort au fichier grimoire
+echo "$SORT_A_APPRENDRE" >> "$GRIMOIRE_FILE" 
+
+echo "Vous pouvez maintenant lancer le sort $SORT_A_APPRENDRE."

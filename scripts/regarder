@@ -23,8 +23,8 @@ fi
 echo "--- $CIBLE ---"
 
 # On utilise 'cut' pour lire les PV au format X/Y (si le fichier contient '/')
-PV_ACTUEL=$(cat "$CIBLE" | cut -d'/' -f1)
-PV_MAX=$(cat "$CIBLE" | cut -d'/' -f2)
+PV_ACTUEL=$(lire_pv "$CIBLE")
+PV_MAX=$(lire_pv_max "$CIBLE")
 LIGNES=$(wc -l < "$CIBLE") 
 
 # Test si le fichier est un ennemi (contient un '/' ou est le rat de départ)
@@ -46,6 +46,5 @@ if grep -q "/" "$CIBLE" || [ "$CIBLE" == "rat_chetif" ]; then
     
 else
     # Si c'est un coffre (ou un autre fichier qui ne contient pas de PV)
-    echo "Contenu : $(cat "$CIBLE")"
-    echo "Ceci est un conteneur ou un message. Utilisez 'cat' ou 'ouvrir' pour interagir."
+    echo "Ceci est un conteneur ou un message. Utilisez 'cat' pour un message ou 'ouvrir' pour un coffre pour interagir."
 fi

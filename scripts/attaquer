@@ -30,11 +30,7 @@ fi
 # Lit les PV ACTUELS du joueur (Utilise lire_pv sur PV_STATS)
 PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
 
-if [ "$PLAYER_HP_CURRENT" -le 0 ]; then
-  echo "Vous êtes mort. Vous ne pouvez pas attaquer."
-  echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
-  exit 1
-fi
+check_mort
 
 # CRÉATION DU VERROU DE COMBAT : Après avoir vérifié que tout le monde est en vie.
 echo "$CIBLE" > "$STATS_DIR/etat_combat"
@@ -45,7 +41,7 @@ echo "--- Début du tour ---"
 pause
 
 PLAYER_ATK=$(cat "$STATS_DIR/attaque_base")
-ENNEMI_HP_MAX=$(cat "$CIBLE" | cut -d'/' -f2) # Récupère le PV Max de l'ennemi
+ENNEMI_HP_MAX=$(lire_pv_max "$CIBLE") # Récupère le PV Max de l'ennemi
 
 # Calcul des dégâts
 DMG_JOUEUR=$(($PLAYER_ATK + $RANDOM % 3))
@@ -55,7 +51,7 @@ echo "Vous attaquez $CIBLE et infligez $DMG_JOUEUR points de dégâts !"
 pause
 
 # Sauvegarde des PV de l'ennemi au format X/Max
-echo "$ENNEMI_HP_APRES/$ENNEMI_HP_MAX" > "$CIBLE"
+ecrire_pv "$CIBLE" "$ENNEMI_HP_APRES"
 
 # --- 3. Vérification : L'ennemi est-il mort ? ---
 
@@ -63,35 +59,58 @@ if [ "$ENNEMI_HP_APRES" -le 0 ]; then
   echo "Vous avez vaincu le $CIBLE !"
   pause
   rm "$CIBLE"
-  rm "$STATS_DIR/etat_combat" # FIN DU COMBAT : On lève le verrou
-  echo "---------------------"
-  exit 0
+  # --- NOUVELLE VÉRIFICATION CRITIQUE : Compte tous les ennemis ---
+
+    # Cette commande compte tous les fichiers ennemis dans le répertoire actuel.
+    # Le '.' représente le répertoire courant.
+    NB_ENNEMIS_RESTANTS=$(ls -A . | grep -E -c "(rat|gobelin|squelette|rat_mutant|rat_chetif)")
+
+    if [ "$NB_ENNEMIS_RESTANTS" -eq 0 ]; then
+        # CAS 1: Plus aucun ennemi dans la salle
+        echo "La menace est écartée. Vous êtes hors combat."
+        rm "$STATS_DIR/etat_combat" # ⬅️ ON NE RETIRE LE VERROU QU'ICI
+    else
+        # CAS 2: Il reste des ennemis
+        echo "Victoire sur $CIBLE !"
+        pause
+        echo "Mais vous êtes toujours en combat ! Il reste $NB_ENNEMIS_RESTANTS ennemi(s) :"
+        ls -A . | grep -E "(rat|gobelin|squelette|rat_mutant|rat_chetif)"
+        # Note : Le verrou 'etat_combat' est MAINTENU.
+    fi
+
+    echo "---------------------"
+    exit 0
 fi
 
 # --- 4. Tour de l'Ennemi (s'il est vivant) ---
 
-DMG_ENNEMI=$((2 + $RANDOM % 2))
+# Initialiser les PV pour l'affichage final (on utilise les PV AVANT riposte)
+# Ceci est CRUCIAL pour les cas d'esquive.
+PLAYER_HP_CURRENT_APRES=$(lire_pv "$STATS_DIR/PV_STATS")
+PLAYER_HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
 
-# Calcul des nouveaux PV du joueur
-PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
+# NOUVEAU : Calcul de l'esquive (25% de chance)
+if [ $(($RANDOM % 4)) -eq 0 ]; then # 1 chance sur 4 (0, 1, 2, 3)
+    echo "$CIBLE frappe... mais vous esquivez son attaque de justesse !"
+    pause
+    # On passe la riposte, pas de dégâts infligés.
+else
+    # Riposte normale (si l'esquive a échoué)
+    DMG_ENNEMI=$((2 + $RANDOM % 2))
+    PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
+    PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
 
-echo "$CIBLE vous frappe et inflige $DMG_ENNEMI points de dégâts !"
-pause
+    echo "$CIBLE riposte et vous frappe pour $DMG_ENNEMI points de dégâts !"
+    pause
 
-# Sauvegarde des PV du joueur (écrit sur PV_STATS au format X/Max)
-PLAYER_HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
-echo "$PLAYER_HP_CURRENT_APRES/$PLAYER_HP_MAX" > "$STATS_DIR/PV_STATS"
+    # Sauvegarde des PV du joueur
+    PLAYER_HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
+    ecrire_pv "$STATS_DIR/PV_STATS" "$PLAYER_HP_CURRENT_APRES"
 
 # --- 5. Vérification : Le joueur est-il mort ? ---
 
-if [ "$PLAYER_HP_CURRENT_APRES" -le 0 ]; then
-  echo "Aïe... Vous êtes mort."
-  pause
-  echo "---------------------"
-  echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
-  exit 1 
+	check_mort
 fi
-
 # --- 6. Fin du tour ---
 
 echo "--- Fin du tour ---"

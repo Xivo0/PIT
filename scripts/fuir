@@ -13,63 +13,80 @@ if [ ! -f "$ETAT_COMBAT_FILE" ]; then
     exit 1
 fi
 
+# On lit l'ennemi depuis le verrou pour la narration (si besoin)
 ENNEMI=$(cat "$ETAT_COMBAT_FILE")
 CHANCE_FUITE=50 # 50% de chance de fuir
 
-echo "Vous tentez de fuir le $ENNEMI..."
+echo "Vous tentez de fuir..."
 pause
 
 # --- 2. Tentative de Fuite ---
 
 if [ $(($RANDOM % 100)) -lt $CHANCE_FUITE ]; then
     
-    # --- SUCCÈS DE LA FUITE ---
+    # --- SUCCÈS DE LA FUITE (Tous les ennemis sont réinitialisés) ---
     echo "Vous réussissez à prendre vos distances !"
     pause
-    echo "(Le combat est terminé. Vous pouvez partir avec 'cd ..')"
     
     rm "$ETAT_COMBAT_FILE"
     
-    # --- RESET DES PV DE L'ENNEMI (Format X/X) ---
-    echo "$ENNEMI, frustré, reprend son souffle. Ses PV sont restaurés."
+    # --- RESET DES PV POUR TOUT LE GROUPE ---
+    echo "La frustration des créatures lève l'état hostile. Leurs PV sont restaurés."
     pause
     
-    # On récupère les PV max de l'ennemi (le 'Y' de 'X/Y')
-    ENNEMI_HP_MAX=$(cat "$ENNEMI" | cut -d'/' -f2)
-    
-    # On réinitialise les PV au format MAX/MAX
-    echo "$ENNEMI_HP_MAX/$ENNEMI_HP_MAX" > "$ENNEMI"
+    ENEMIES=$(ls -A . | grep -E "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)")
+
+    for ENNEMI_FILE in $ENEMIES; do
+        ENNEMI_HP_MAX=$(lire_pv_max "$ENNEMI_FILE")
+        ecrire_pv "$ENNEMI_FILE" "$ENNEMI_HP_MAX"
+        echo " - PV de $ENNEMI_FILE restaurés."
+    done
+
+    echo "(Le combat est terminé. Vous pouvez partir avec 'cd ..')"
     
 else
     
     # --- ÉCHEC DE LA FUITE (L'ennemi riposte) ---
-    echo "Vous trébuchez ! Le $ENNEMI vous frappe avant que vous ne puissiez vous éloigner."
     pause
     
-    # Dégâts ennemis (base 2 + aléatoire 0 ou 1)
-    DMG_ENNEMI=$((2 + $RANDOM % 2))
-    
-    # NOUVEAU: Lecture des PV du joueur depuis PV_STATS
-    PLAYER_HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
-    PLAYER_HP_MAX=$(cat "$STATS_DIR/PV_STATS" | cut -d'/' -f2)
-    
-    PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT - $DMG_ENNEMI))
-    
-    echo "Vous perdez $DMG_ENNEMI PV en tentant de fuir."
-    pause
-    
-    # NOUVEAU: Sauvegarde des PV du joueur dans PV_STATS
-    echo "$PLAYER_HP_CURRENT_APRES/$PLAYER_HP_MAX" > "$STATS_DIR/PV_STATS"
+    # Compte les ennemis restants pour la narration
+    NB_ENNEMIS_RESTANTS=$(ls -A . | grep -E -c "(rat|gobelin|squelette|rat_mutant|rat_chetif|BOSS_FINAL)")
 
-    # --- Vérification de mort ---
-    if [ "$PLAYER_HP_CURRENT_APRES" -le 0 ]; then
-        echo "Le choc vous est fatal. Game Over."
-        pause
-        echo "---------------------"
-        echo "Game Over. Lancez ./reset.sh et ./install.sh pour recommencer."
-        exit 1 
+    # Narration (générique et neutre)
+    if [ "$NB_ENNEMIS_RESTANTS" -gt 1 ]; then
+        echo "Vous trébuchez ! Un des ennemis vous frappe avant que vous ne puissiez vous éloigner."
+    else
+        echo "Vous trébuchez ! Votre adversaire vous frappe avant que vous ne puissiez vous éloigner."
     fi
+    pause
+    
+    # CORRECTION BUG ESQUIVE : Initialisation des variables
+    PLAYER_HP_CURRENT_APRES=$(lire_pv "$STATS_DIR/PV_STATS")
+    PLAYER_HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
 
+    # Calcul de l'esquive (25% de chance)
+    if [ $(($RANDOM % 4)) -eq 0 ]; then
+        echo "Heureusement, vous parvenez à éviter le coup en plongeant !"
+        pause
+    else
+        # Dégâts si l'esquive échoue
+        DMG_ENNEMI=$((2 + $RANDOM % 2))
+        
+        # On relit la valeur actuelle pour le calcul
+        PLAYER_HP_CURRENT_TEMP=$(lire_pv "$STATS_DIR/PV_STATS")
+        PLAYER_HP_CURRENT_APRES=$(($PLAYER_HP_CURRENT_TEMP - $DMG_ENNEMI))
+        
+        echo "Vous perdez $DMG_ENNEMI PV en tentant de fuir."
+        pause
+        
+        # Sauvegarde des PV du joueur dans PV_STATS
+        ecrire_pv "$STATS_DIR/PV_STATS" "$PLAYER_HP_CURRENT_APRES"
+
+        # APPEL DE LA FONCTION CHECK_MORT
+        check_mort
+    fi
+    
+    # Affichage final (les variables sont maintenant toujours définies)
     echo "Vos PV: $PLAYER_HP_CURRENT_APRES / $PLAYER_HP_MAX"
-    echo "Vous êtes toujours en combat avec le $ENNEMI."
+    echo "Vous êtes toujours en combat. Continuez le combat pour lever l'état hostile."
 fi
