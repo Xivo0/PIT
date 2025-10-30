@@ -121,7 +121,13 @@ else
 	
 		0|1|2)
 	
-			echo "Vous apercevez un coffre (Utilisez 'ouvrir coffre.txt' pour l'ouvrir)."
+			echo
+			# AFFICHAGE ASCII DU COFFRE :
+			echo "  _______"
+			echo " |_______| Vous apercevez un coffre."
+			echo " | | | | | (Utilisez 'ouvrir coffre.txt' pour l'ouvrir)"
+			echo " |_|_|_|_|"
+			echo
 			pause
 			
 			# Dé de 5 faces : 0-1=Potion, 2=Piège, 3=Indice Feu, 4=Indice Soin

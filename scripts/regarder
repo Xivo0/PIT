@@ -43,8 +43,25 @@ if grep -q "/" "$CIBLE" || [ "$CIBLE" == "rat_chetif" ]; then
         echo "Description :"
         tail -n +2 "$CIBLE"
     fi
-    
+    case "$CIBLE" in
+    "rat_chetif")
+        echo "   /\_/\  "
+        echo "  ( o.o ) "
+        echo "  > ^ <   "
+        ;;
+    "squelette")
+        echo "   _ _ _  "
+        echo "  | o o | "
+        echo "  | / \ | "
+        ;;
+    *)
+        # Affichage générique si pas d'image spécifique
+        echo " [ Image de $CIBLE ]"
+        ;;
+esac
 else
     # Si c'est un coffre (ou un autre fichier qui ne contient pas de PV)
     echo "Ceci est un conteneur ou un message. Utilisez 'cat' pour un message ou 'ouvrir' pour un coffre pour interagir."
 fi
+
+
