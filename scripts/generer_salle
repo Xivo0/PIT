@@ -164,7 +164,7 @@ else
     fi
 	
 	# 1 chance sur 4 de générer une porte secrète
-if [ $(($RANDOM % 4)) -eq 0 ]; then
+if [ $(($RANDOM % 1)) -eq 0 ]; then
     
     echo "Un passage dissimulé dans le mur attire votre attention : 'porte_secrete'."
     pause
@@ -207,7 +207,7 @@ mkdir "\$SALLE_SECRETE_DIR"
 echo "La porte s'ouvre sur : salle_secrete_tresor"
 echo "20/20" > "\$SALLE_SECRETE_DIR/gardien_du_tresor"
 
-LOOT_TRESOR=$((\$RANDOM % 3))
+LOOT_TRESOR=\$(($RANDOM % 3))
 
 case "\$LOOT_TRESOR" in
 
