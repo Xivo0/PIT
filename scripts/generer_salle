@@ -111,7 +111,7 @@ else
     # Ennemi supplémentaire ? (1 chance sur 2)
     if [ $(($RANDOM % 2)) -eq 0 ]; then
         echo "Il est accompagné d'un gobelin !"
-        echo "12/12" > "$CHEMIN_NOUVELLE_SALLE/gobelin"
+        echo "8/8" > "$CHEMIN_NOUVELLE_SALLE/gobelin"
 		pause
     fi
 
@@ -130,8 +130,8 @@ else
 			echo
 			pause
 			
-			# Dé de 5 faces : 0-1=Potion, 2=Piège, 3=Indice Feu, 4=Indice Soin
-			LOOT_TYPE=$(($RANDOM % 5))
+			# Dé de 7 faces : 0-1=Potion_soin, 2=Piège, 3=Indice Feu, 4=Indice Soin, 5-6=Potion_mana
+			LOOT_TYPE=$(($RANDOM % 7))
 		
 			case "$LOOT_TYPE" in
 				0|1)
@@ -145,6 +145,9 @@ else
 					;;
 				4)
 					echo "indice_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
+					;;
+				5|6)
+					echo "potion_mana" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
 					;;
 			esac
 			;;

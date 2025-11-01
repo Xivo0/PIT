@@ -48,6 +48,29 @@ case $OBJET in
         ecrire_pv "$STATS_DIR/PV_STATS" "$HP_APRES"
         
         ;;
+	"potion_mana")
+		# Récupération des PE du joueur depuis PE_STATS
+        PE_MAX=$(lire_pv_max "$STATS_DIR/PE_STATS")
+        PE_CURRENT=$(lire_pv "$STATS_DIR/PE_STATS")
+        
+        # Rend 5 à 8 PV
+        SOIN=$((5 + $RANDOM % 4))
+        
+        PE_APRES=$(($PE_CURRENT + $SOIN))
+        
+        # Limite le soin au PE Max
+        if [ "$PE_APRES" -gt "$PE_MAX" ]; then
+            PE_APRES="$PE_MAX"
+        fi
+
+        echo "Vous buvez la Potion de Mana et récupérez $SOIN PE."
+        pause
+        echo "Vos PE sont maintenant : $PE_APRES / $PE_MAX."
+        
+        # Sauvegarde des PE au format Actuel/Max
+        ecrire_pv "$STATS_DIR/PE_STATS" "$PE_APRES"
+        
+        ;;
 		
 	# --- NOUVEAU : LOGIQUE DES TRÉSORS ---
     "epee_magique")

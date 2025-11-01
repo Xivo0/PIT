@@ -36,6 +36,16 @@ case $CONTENU in
     "potion_soin")
         echo "Le coffre contenait une Potion de Soin !"
         echo "potion_soin" >> "$INVENTAIRE" # Ajoute l'objet
+		# --- NOUVEAU : Chance d'une double potion (1 chance sur 4) ---
+		BONUS=$(($RANDOM % 4))
+		if [ "$BONUS" -eq 0 ]; then
+			echo "potion_soin" >> "$FICHIER_COFFRE" # Ajoute la seconde potion
+			echo "Oh ! Et vous trouvez une deuxième potion de soin, c'est votre jour de chance !"
+		fi
+		elif [ "$BONUS" -eq 1 ]; then
+			echo "potion_mana" >> "$FICHIER_COFFRE" # Ajoute la seconde potion
+			echo "Oh ! Et vous trouvez une potion de mana également, c'est votre jour de chance !"
+		fi
         ;;
 
     "piège_flechette")
