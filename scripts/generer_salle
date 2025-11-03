@@ -263,8 +263,17 @@ fi
 # 3. OUI : Le joueur a la clé ET la salle n'existe pas.
 echo "Vous insérez la \$CLE_REQUISE... La serrure grince et s'ouvre !"
 pause
-sed -i.bak "/^\$CLE_REQUISE\$/{d;q;}" "\$INVENTAIRE_FILE"
-rm "\$INVENTAIRE_FILE.bak" 2>/dev/null
+echo "Vous insérez la \$CLE_REQUISE... La serrure grince et s'ouvre !"
+pause
+
+# 1. Trouver le NUMÉRO de la première ligne correspondant à la clé
+LIGNE_CLE=\$(grep -n "^\$CLE_REQUISE$" "\$INVENTAIRE_FILE" | head -n 1 | cut -d: -f1)
+
+# 2. Si une ligne a été trouvée, la supprimer par son numéro exact
+if [ ! -z "\$LIGNE_CLE" ]; then
+    sed -i.bak "\${LIGNE_CLE}d" "\$INVENTAIRE_FILE"
+    rm "\$INVENTAIRE_FILE.bak" 2>/dev/null
+fi
 
 # Création de la salle secrète
 mkdir "\$SALLE_SECRETE_DIR"
