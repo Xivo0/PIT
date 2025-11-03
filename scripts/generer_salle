@@ -16,7 +16,7 @@ rm .__ACCES_SALLE_OK__
 # --- Moteur de Génération de Salle (avec logique Boss) ---
 
 # --- PARAMÈTRES DU JEU ---
-MAX_SALLES_AVANT_BOSS=2
+MAX_SALLES_AVANT_BOSS=3
 
 echo "Vous tournez la poignée..."
 pause
@@ -164,7 +164,7 @@ else
     fi
 	
 	# 1 chance sur 4 de générer une porte secrète
-if [ $(($RANDOM % 1)) -eq 0 ]; then
+if [ $(($RANDOM % 4)) -eq 0 ]; then
     
     echo "Un passage dissimulé dans le mur attire votre attention : 'porte_secrete'."
     pause

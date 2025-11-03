@@ -30,7 +30,7 @@ if ! grep -q "^$SORT$" "$GRIMOIRE_FILE"; then
 fi
 
 # --- 2. Logique Principale (par sort) ---
-
+PLAYER_MAGIE=$(cat "$STATS_DIR/magie_base")
 case $SORT in
     "sort_feu")
         # --- LOGIQUE OFFENSIVE (sort_feu) ---
@@ -60,7 +60,6 @@ case $SORT in
         pause
         
         # Tour du Joueur (Sort)
-        PLAYER_MAGIE=$(cat "$STATS_DIR/magie_base")
         ENNEMI_HP=$(lire_pv "$CIBLE")
         ENNEMI_HP_MAX=$(lire_pv_max "$CIBLE")
         DMG_SORT=$(($PLAYER_MAGIE + $RANDOM % 5))
@@ -139,7 +138,7 @@ case $SORT in
         # Calcul du Soin
         HP_MAX=$(lire_pv_max "$STATS_DIR/PV_STATS")
         HP_CURRENT=$(lire_pv "$STATS_DIR/PV_STATS")
-        SOIN=$((10 + $RANDOM % 6)) # Soin puissant (10-15 PV)
+        SOIN=$(($PLAYER_MAGIE + $RANDOM % 6))
         HP_APRES=$(($HP_CURRENT + $SOIN))
         
         if [ "$HP_APRES" -gt "$HP_MAX" ]; then

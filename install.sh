@@ -31,7 +31,7 @@ case $choix_classe in
     echo "5/5" > "$stats_dir/PE_STATS"
     echo "5" > "$stats_dir/attaque_base"
     echo "0" > "$stats_dir/magie_base"
-    echo "1" > "$stats_dir/chance_loot"
+    # echo "1" > "$stats_dir/chance_loot", non utilisée
     ;;
   2) # Mage
     echo "Mage" > "$stats_dir/classe"
@@ -39,7 +39,7 @@ case $choix_classe in
     echo "15/15" > "$stats_dir/PE_STATS"
     echo "2" > "$stats_dir/attaque_base"
     echo "6" > "$stats_dir/magie_base"
-    echo "1" > "$stats_dir/chance_loot"
+    # echo "1" > "$stats_dir/chance_loot", non utilisée
     echo "sort_feu" > "$stats_dir/grimoire.txt"
     ;;
   3) # Voleur
@@ -48,7 +48,7 @@ case $choix_classe in
     echo "10/10" > "$stats_dir/PE_STATS"
     echo "3" > "$stats_dir/attaque_base"
     echo "3" > "$stats_dir/magie_base"
-    echo "3" > "$stats_dir/chance_loot"
+    # echo "3" > "$stats_dir/chance_loot", non utilisée
     echo "potion_soin" > "$stats_dir/inventaire.txt"
     ;;
   *) # Défaut (Paysan)
@@ -56,9 +56,9 @@ case $choix_classe in
     echo "Paysan" > "$stats_dir/classe"
     echo "10/10" > "$stats_dir/PV_STATS"
     echo "5/5" > "$stats_dir/PE_STATS"
-    echo "1" > "$stats_dir/attaque_base"
+    echo "3" > "$stats_dir/attaque_base"
     echo "0" > "$stats_dir/magie_base"
-    echo "1" > "$stats_dir/chance_loot"
+    #echo "1" > "$stats_dir/chance_loot", non utilisée
     ;;
 esac
 
