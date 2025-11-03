@@ -122,7 +122,7 @@ esac
 
 # --- 3. Retrait de l'objet de l'inventaire ---
 # Retire la première occurrence de l'objet
-sed -i.bak "0,/^$OBJET$/d" "$INVENTAIRE"
+sed -i.bak "/^$OBJET$/d" "$INVENTAIRE"
 rm "$INVENTAIRE.bak" 2>/dev/null 
 echo "L'objet $OBJET a été retiré de l'inventaire."
 pause

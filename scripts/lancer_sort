@@ -122,7 +122,7 @@ case $SORT in
         # --- LOGIQUE DÉFENSIVE (sort_soin) ---
         
         # Vérification PE
-        COUT_PE=5 # Le soin coûte plus cher
+        COUT_PE=4
         PE_CURRENT=$(lire_pv "$STATS_DIR/PE_STATS")
         if [ "$PE_CURRENT" -lt "$COUT_PE" ]; then
             echo "Vous manquez de magie pour ce soin. Coût: $COUT_PE PE. Actuel: $PE_CURRENT PE."

@@ -124,6 +124,8 @@ echo "Les commandes du jeu (statut, regarder, etc.) sont dans le dossier 'script
 echo
 echo "Tapez la commande suivante pour commencer :"
 echo
-echo "chmomd +x scripts/* && export PATH=\$(pwd)/scripts:\$PATH && cd DONJON/salles/entree"
+echo "export PATH=\$(pwd)/scripts:\$PATH && cd DONJON/salles/entree"
 echo
 echo "###################################################################"
+chmod +x scripts/*
+chmod +x reset.sh

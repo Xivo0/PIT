@@ -1,6 +1,7 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
-# NOUVEAU : Récupère le chemin de la porte qui a appelé ce script
+
+#Récupère le chemin de la porte qui a appelé ce script
 PORTE_A_SUPPRIMER=$1
 # --- VÉRIFICATION DE SÉCURITÉ (Clé d'accès) ---
 # Le script doit être appelé depuis un dossier qui contient le fichier TEMPORAIRE .__ACCES_SALLE_OK__.
@@ -32,7 +33,7 @@ NB_SALLES=$(ls -d "$SALLE_DIR"/* 2>/dev/null | grep -E -c "(entree|salle_[0-9]+)
 # 2. LOGIQUE DE FIN D'ÉTAGE (BOSS FINAL)
 # ----------------------------------------------------
 
-# Si on a créé assez de salles (NB_SALLES > 5), on crée le Boss
+# Si on a créé assez de salles, on crée le Boss
 if [ "$NB_SALLES" -gt "$MAX_SALLES_AVANT_BOSS" ]; then
     
     # --- Création du Boss ---
@@ -87,7 +88,9 @@ EOF
 # ----------------------------------------------------
 # 3. LOGIQUE DE SALLE NORMALE (ALÉATOIRE)
 # ----------------------------------------------------
-else
+else	
+    STATS_DIR="$(dirname "$0")/../DONJON/stats"
+    CLASSE_JOUEUR=$(cat "$STATS_DIR/classe")
     # --- Création de la Salle Normale ---
     NOUVELLE_SALLE="salle_$((NB_SALLES + 1))"
     CHEMIN_NOUVELLE_SALLE="$SALLE_DIR/$NOUVELLE_SALLE"
@@ -115,11 +118,11 @@ else
 		pause
     fi
 
-    # Coffre (piégé ou non, 3 chances sur 4)
-	COFFRE_APPARITION=$(($RANDOM % 4))
+    # Coffre (piégé ou non, 4 chances sur 5)
+	COFFRE_APPARITION=$(($RANDOM % 5))
     case "$COFFRE_APPARITION" in
 	
-		0|1|2)
+		0|1|2|3)
 	
 			echo
 			# AFFICHAGE ASCII DU COFFRE :
@@ -150,10 +153,71 @@ else
 					echo "potion_mana" > "$CHEMIN_NOUVELLE_SALLE/coffre.txt"
 					;;
 			esac
+				# ------------------------------------------------------------------
+				# LOGIQUE DU COFFRE BONUS (Utilise la classe du joueur)
+				# ------------------------------------------------------------------
+
+			TIRAGE_MAX=0
+			SEUIL_REUSSITE=0
+
+			# 1. Détermination du bonus de classe (SEUIL_REUSSITE représente le nombre de cas où on réussit)
+			if [ "$CLASSE_JOUEUR" == "Voleur" ]; then
+			    # Voleur : 2 chances sur 3 (Tirage sur 3, Réussite si < 2)
+			    TIRAGE_MAX=3
+			    SEUIL_REUSSITE=2 
+			elif [ "$CLASSE_JOUEUR" == "Paysan" ]; then
+			    # Paysan : 1 chance sur 5 (Tirage sur 5, Réussite si < 1)
+			    TIRAGE_MAX=5
+			    SEUIL_REUSSITE=1
+			else
+			    # Guerrier/Mage : 1 chance sur 4 (Tirage sur 4, Réussite si < 1)
+			    TIRAGE_MAX=4
+			    SEUIL_REUSSITE=1
+			fi
+
+			# 2. Jet de dés du coffre bonus
+			JET_BONUS=$(($RANDOM % $TIRAGE_MAX))
+
+			# Le coffre apparaît si le jet est inférieur au SEUIL
+			if [ "$JET_BONUS" -lt "$SEUIL_REUSSITE" ]; then
+			    
+			    echo "Vous trouvez un deuxième coffre dissimulé ! ('coffre_bonus.txt')"
+			    pause
+			    
+			    # Le coffre bonus a un loot simple (potion ou indice)
+			    LOOT_TYPE=$(($RANDOM % 7))
+		
+				case "$LOOT_TYPE" in
+					0|1)
+						echo "potion_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre_bonus.txt"
+						;;
+					2)	
+						echo "piège_flechette" > "$CHEMIN_NOUVELLE_SALLE/coffre_bonus.txt"
+						;;
+					3)
+						echo "indice_magie" > "$CHEMIN_NOUVELLE_SALLE/coffre_bonus.txt"
+						;;
+					4)
+						echo "indice_soin" > "$CHEMIN_NOUVELLE_SALLE/coffre_bonus.txt"
+						;;
+					5|6)
+						echo "potion_mana" > "$CHEMIN_NOUVELLE_SALLE/coffre_bonus.txt"
+						;;
+				esac
+			    
+			    # AFFICHAGE ASCII DU COFFRE BONUS :
+			    echo "  _______"
+			    echo " |_______| Un coffre bonus apparaît."
+			    echo " | | | | | (Utilisez 'ouvrir coffre_bonus.txt')"
+			    echo " |_|_|_|_|"
+			    echo
+			    
+			fi
 			;;
-		3)
+		4)
 			;;
 	esac
+	
     
 	# 1 chance sur 2 de trouver une clé au sol
     if [ $(($RANDOM % 2)) -eq 0 ]; then
@@ -163,8 +227,8 @@ else
         echo "cle_secrete" > "$CHEMIN_NOUVELLE_SALLE/cle_secrete.item"
     fi
 	
-	# 1 chance sur 4 de générer une porte secrète
-if [ $(($RANDOM % 4)) -eq 0 ]; then
+	# 1 chance sur 2 de générer une porte secrète
+if [ $(($RANDOM % 2)) -eq 0 ]; then
     
     echo "Un passage dissimulé dans le mur attire votre attention : 'porte_secrete'."
     pause
@@ -199,7 +263,7 @@ fi
 # 3. OUI : Le joueur a la clé ET la salle n'existe pas.
 echo "Vous insérez la \$CLE_REQUISE... La serrure grince et s'ouvre !"
 pause
-sed -i.bak "0,/^\$CLE_REQUISE\$/d" "\$INVENTAIRE_FILE"
+sed -i.bak "/^\$CLE_REQUISE\$/{d;q;}" "\$INVENTAIRE_FILE"
 rm "\$INVENTAIRE_FILE.bak" 2>/dev/null
 
 # Création de la salle secrète

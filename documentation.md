@@ -70,7 +70,7 @@ Le combat se déclenche dès la première attaque et ne se termine que lorsque t
 
 | `utiliser <objet>` | `utiliser potion_soin` | Applique l'effet (soin, amélioration de stat). Si en combat, déclenche une riposte de l'ennemi. |
 
-| `./porte_X` | `./porte_suivante` | Génère la salle suivante si "porte_suivante" (il faut que tous les ennemis de la salle aient été vaincus), génère une salle secrète si "porte_secrete" (chances d'apparition: 25%) (si cle_secrete dans inventaire, chances d'apparition: 50%) |
+| `./porte_X` | `./porte_suivante` | Génère la salle suivante si "porte_suivante" (il faut que tous les ennemis de la salle aient été vaincus), génère une salle secrète si "porte_secrete" (chances d'apparition: 50%) (si cle_secrete dans inventaire, chances d'apparition: 50%) |
 
 ---
 

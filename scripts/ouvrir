@@ -17,7 +17,7 @@ fi
 # Sécurité critique : On doit seulement ouvrir un objet qui est un fichier
 # ET dont le nom contient "coffre" (pour éviter d'ouvrir un ennemi)
 if [ ! -f "$CIBLE" ]; then
-    echo "L'objet '$CIBLE' n'existe pas ici."
+    echo "L'objet '$CIBLE' ne peut pas s'ouvrir."
     exit 1
 fi
 
@@ -39,13 +39,26 @@ case $CONTENU in
 		# --- NOUVEAU : Chance d'une double potion (1 chance sur 4) ---
 		BONUS=$(($RANDOM % 4))
 		if [ "$BONUS" -eq 0 ]; then
-			echo "potion_soin" >> "$FICHIER_COFFRE" # Ajoute la seconde potion
+			echo "potion_soin" >> "$INVENTAIRE" # Ajoute la seconde potion
 			echo "Oh ! Et vous trouvez une deuxième potion de soin, c'est votre jour de chance !"
 		elif [ "$BONUS" -eq 1 ]; then
-			echo "potion_mana" >> "$FICHIER_COFFRE" # Ajoute la seconde potion
+			echo "potion_mana" >> "$INVENTAIRE" # Ajoute la seconde potion
 			echo "Oh ! Et vous trouvez une potion de mana également, c'est votre jour de chance !"
 		fi
         ;;
+    "potion_mana")
+        echo "Le coffre contenait une Potion de Mana !"
+        echo "potion_mana" >> "$INVENTAIRE" # Ajoute l'objet
+		# --- NOUVEAU : Chance d'une double potion (1 chance sur 4) ---
+		BONUS=$(($RANDOM % 4))
+		if [ "$BONUS" -eq 0 ]; then
+			echo "potion_soin" >> "$INVENTAIRE" # Ajoute la seconde potion
+			echo "Oh ! Et vous trouvez une deuxième potion de soin, c'est votre jour de chance !"
+		elif [ "$BONUS" -eq 1 ]; then
+			echo "potion_mana" >> "$INVENTAIRE" # Ajoute la seconde potion
+			echo "Oh ! Et vous trouvez une potion de mana également, c'est votre jour de chance !"
+		fi
+        ;;    
 
     "piège_flechette")
         # --- LOGIQUE DU PIÈGE (LA FLÈCHE EMPOISONNÉE) ---
@@ -99,12 +112,6 @@ case $CONTENU in
         # Sauvegarde du contenu dans le fichier de notes global
         cat "$NOTE_NOM" >> "$STATS_DIR/notes.txt"
         ;;
-	"cle_secrete")
-        echo "Le coffre contenait une 'cle_secrete' en fer."
-        pause
-        echo "cle_secrete a été ajoutée à votre inventaire."
-        echo "cle_secrete" >> "$INVENTAIRE" # Ajoute la clé
-        ;;	
     *) # Si le fichier contenait autre chose (un objet non géré)
         echo "Le coffre contenait : $CONTENU (Objet inconnu)"
         ;;
