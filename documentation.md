@@ -42,7 +42,7 @@ Le donjon est généré dynamiquement jusqu'à un maximum de **3 salles normales
 
 ---
 
-## III. Commandes de Gameplay (Tour par Tour)
+## III. Commandes de Gameplay 
 
 Le combat se déclenche dès la première attaque et ne se termine que lorsque tous les ennemis de la salle sont vaincus (le fichier `etat_combat` est supprimé).
 
