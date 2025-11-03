@@ -220,7 +220,7 @@ else
 	
     
 	# 1 chance sur 2 de trouver une clé au sol
-    if [ $(($RANDOM % 2)) -eq 0 ]; then
+    if [ $(($RANDOM % 1)) -eq 0 ]; then
         echo "Vous remarquez quelque chose qui brille par terre : 'cle_secrete'."
         pause
         # On crée le fichier .item pour que 'ramasser' sache quoi prendre
@@ -228,7 +228,7 @@ else
     fi
 	
 	# 1 chance sur 2 de générer une porte secrète
-if [ $(($RANDOM % 2)) -eq 0 ]; then
+if [ $(($RANDOM % 1)) -eq 0 ]; then
     
     echo "Un passage dissimulé dans le mur attire votre attention : 'porte_secrete'."
     pause
@@ -261,8 +261,6 @@ if ! grep -q "^\$CLE_REQUISE$" "\$INVENTAIRE_FILE"; then
 fi
 
 # 3. OUI : Le joueur a la clé ET la salle n'existe pas.
-echo "Vous insérez la \$CLE_REQUISE... La serrure grince et s'ouvre !"
-pause
 echo "Vous insérez la \$CLE_REQUISE... La serrure grince et s'ouvre !"
 pause
 
