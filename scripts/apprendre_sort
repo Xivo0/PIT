@@ -1,7 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande APPRENDRE_SORT ---
 # Permet au joueur d'apprendre un sort en utilisant le mot-clé secret.
 
 MOT_CLE=$1

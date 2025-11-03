@@ -1,24 +1,18 @@
-# 🕹️ BASH QUEST : Le Dungeon Crawler
+# BASH QUEST 
 
 Ce document explique les principes et commandes de BASH QUEST, un *Rogue-like* au gameplay tour par tour.
 
----
-
-##I. Principe du Jeu (Dungeon Crawling)
+## Principe du Jeu
 
 Le joueur incarne un aventurier (Guerrier, Mage, ou Voleur) et progresse à travers un donjon représenté par une arborescence de répertoires.
 
-* **Une Salle** est un **répertoire** (`DONJON/salles/salle_X`).
-* **Les Ennemis** et **Objets** sont des **fichiers** dans ces répertoires (ex: `squelette`, `coffre.txt`).
-* **Le But** : Vaincre tous les ennemis d'une salle pour déverrouiller la porte et avancer jusqu'au boss final.
+**Une Salle** est un **répertoire** (`DONJON/salles/salle_X`).
+**Les Ennemis** et **Objets** sont des **fichiers** dans ces répertoires (ex: `squelette`, `coffre.txt`).
+**Le But** : Vaincre tous les ennemis d'une salle pour déverrouiller la porte et avancer jusqu'au boss final.
 
 ### Palier de Difficulté
 
 Le donjon est généré dynamiquement jusqu'à un maximum de **3 salles normales** sans compter l'entrée (nombre de salles ajustable dans le script generer_salle, ligne 19), après quoi le joueur rencontrera le **BOSS_FINAL**.
-
----
-
-## II. Démarrage et Commandes Essentielles
 
 ### Installation et Lancement
 
@@ -40,13 +34,11 @@ Le donjon est généré dynamiquement jusqu'à un maximum de **3 salles normales
 
 | `grimoire` | `grimoire` | Liste les sorts connus. |
 
----
-
-## III. Commandes de Gameplay 
+## Commandes de Gameplay 
 
 Le combat se déclenche dès la première attaque et ne se termine que lorsque tous les ennemis de la salle sont vaincus (le fichier `etat_combat` est supprimé).
 
-### A. Combat et Magie
+### Combat et Magie
 
 | Commande | Rôle/Exemple | Description de la commande/mécanique |
 
@@ -59,8 +51,7 @@ Le combat se déclenche dès la première attaque et ne se termine que lorsque t
 | `apprendre_sort <formule>` | `apprendre_sort PATATE` | Permet d'ajouter un sort à son grimoire (soin de feu ou de soin) |
 
 
-
-### B. Objets et Progression
+### Objets et Progression
 
 | Commande | Exemple | Description de la commande |
 
@@ -72,9 +63,15 @@ Le combat se déclenche dès la première attaque et ne se termine que lorsque t
 
 | `./porte_X` | `./porte_suivante` | Génère la salle suivante si "porte_suivante" (il faut que tous les ennemis de la salle aient été vaincus), génère une salle secrète si "porte_secrete" (chances d'apparition: 50%) (si cle_secrete dans inventaire, chances d'apparition: 50%) |
 
----
 
-## IV. Divers
+## Divers
 
-| **Rejouable** | Oui | Le script `reset.sh` permet de supprimer le donjon et relancer une partie complète via `install.sh`. |
+Le script `reset.sh` permet de supprimer le donjon et relancer une partie complète via `install.sh`. 
+
+## Pour aller plus loin : 
+-> ajouter un système de niveaux, permettre de faire en sorte que plus on avance plus l'ennemi nous fait très mal si on n'est pas bien équipé
+-> permettre un dungeon crawling moins linéaire = + de salles par étage (par exemple, obtenir 3 clés pour pouvoir passer à l'étape suivante), actuellement, c'est seulement salle_n -> salle_n+1 -> salle_n+2 ...
+-> réparer les éventuels bugs/exploits observés pour le moment (comme après avoir ramassé cle_secret.item, `touch cle_secret.item` la refait apparaître (même si on ne peut l'utiliser))
+-> + de sorts, + d'équipements, + de monstres avec des caractéristiques uniques
+-> ASCII arts ? ...
 

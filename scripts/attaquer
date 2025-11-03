@@ -1,9 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande ATTAQUER ---
-# Gère un tour de combat complet avec gestion des PV X/Y
-
 CIBLE=$1
 STATS_DIR=$(dirname "$0")/../DONJON/stats
 

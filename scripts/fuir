@@ -1,9 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande FUIR ---
-# Tente de fuir un combat.
-
 STATS_DIR=$(dirname "$0")/../DONJON/stats
 ETAT_COMBAT_FILE="$STATS_DIR/etat_combat"
 

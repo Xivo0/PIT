@@ -1,7 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande UTILISER ---
 # Utilise un objet de l'inventaire du joueur
 
 OBJET=$1

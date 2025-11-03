@@ -1,7 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande GRIMOIRE ---
 # Affiche la liste des sorts connus par le Mage (ou tout joueur)
 
 STATS_DIR=$(dirname "$0")/../DONJON/stats

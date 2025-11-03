@@ -116,6 +116,7 @@ chmod +x "$salle_entree/porte_suivante"
 
 echo "Personnage créé."
 
+
 # 6. Instructions de départ
 echo
 echo "###################################################################"
@@ -124,7 +125,7 @@ echo "Les commandes du jeu (statut, regarder, etc.) sont dans le dossier 'script
 echo
 echo "Tapez la commande suivante pour commencer :"
 echo
-echo "export PATH=\$(pwd)/scripts:\$PATH && cd DONJON/salles/entree"
+echo "export PATH=$(pwd)/scripts:$PATH && cd DONJON/salles/entree"
 echo
 echo "###################################################################"
 chmod +x scripts/*

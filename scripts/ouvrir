@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
-# --- Commande OUVRIR ---
+
 # Interagit avec un coffre ou autre conteneur dans la salle
 
 CIBLE=$1

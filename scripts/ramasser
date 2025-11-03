@@ -17,6 +17,16 @@ if [ ! -f "$CIBLE" ]; then
     exit 1
 fi
 
+CONTENU_OBJET=$(cat "$CIBLE")
+
+# VÉRIFICATION ANTI-EXPLOIT (Le fichier doit contenir du texte)
+if [ -z "$CONTENU_OBJET" ]; then
+    echo "Le fichier '$CIBLE' est vide ou illisible. Ce n'est pas un objet valide."
+    echo "(Vous ne pouvez pas 'touch' un objet pour le recréer.)"
+    exit 1
+fi
+
+
 # --- NOUVELLE CLAUSE DE SÉCURITÉ (Votre idée) ---
 # On vérifie si le nom du fichier se termine par .item OU .loot
 # '!=' signifie "n'est pas égal à"

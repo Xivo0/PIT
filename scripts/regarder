@@ -1,7 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande REGARDER ---
 # Inspecte une cible (ennemi ou objet) dans la salle actuelle
 
 CIBLE=$1

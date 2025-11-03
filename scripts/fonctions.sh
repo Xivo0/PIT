@@ -1,11 +1,6 @@
 #!/bin/bash
 
-# --- BASH QUEST : Bibliothèque de Fonctions Utilitaires ---
-
-
 # --- Fonction PAUSE ---
-# Utilise la commande 'sleep' pour temporiser l'affichage
-# 0.3 seconde offre un bon compromis pour le rythme
 function pause() {
     sleep 1 
 }

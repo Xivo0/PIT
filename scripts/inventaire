@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
-# --- Commande INVENTAIRE ---
+
 # Affiche le contenu de l'inventaire du joueur
 
 STATS_DIR=$(dirname "$0")/../DONJON/stats

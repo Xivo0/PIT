@@ -1,7 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/fonctions.sh"
 
-# --- Commande LANCER_SORT ---
 # Utilise la magie pour attaquer l'ennemi. Consomme des PE.
 
 SORT=$1
