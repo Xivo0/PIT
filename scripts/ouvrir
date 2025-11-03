@@ -41,7 +41,6 @@ case $CONTENU in
 		if [ "$BONUS" -eq 0 ]; then
 			echo "potion_soin" >> "$FICHIER_COFFRE" # Ajoute la seconde potion
 			echo "Oh ! Et vous trouvez une deuxième potion de soin, c'est votre jour de chance !"
-		fi
 		elif [ "$BONUS" -eq 1 ]; then
 			echo "potion_mana" >> "$FICHIER_COFFRE" # Ajoute la seconde potion
 			echo "Oh ! Et vous trouvez une potion de mana également, c'est votre jour de chance !"
